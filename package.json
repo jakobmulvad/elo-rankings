@@ -7,6 +7,13 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "author": "Jakob Mulvad Nielsen <mulvad@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "ajv": "^3.6.2",
+    "body-parser": "^1.15.0",
+    "elo-rank": "^1.0.0",
+    "express": "^4.13.4",
+    "mongodb": "^2.1.7"
+  }
 }
