@@ -1,4 +1,4 @@
-const eloRank = require('elo-rank')
+const eloRank = require('elo-rank')()
 const mongodb = require('mongodb')
 const MongoClient = mongodb.MongoClient
 const express = require('express')
@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
 		.then(db => db.collection('players'))
 		.then(players => players.find().sort({elo: -1}).toArray())
 		.then(playerList => res.json(playerList))
-		.catch(err => console.log(err.stack))
+		.catch(err => res.status(500).send(err))
 })
 
 app.post('/players', (req, res) => {
@@ -51,12 +51,13 @@ app.post('/players', (req, res) => {
 						})
 				})
 		})
+		.catch(err => res.status(500).send(err))
 })
 
 app.post('/game', (req, res) => {
 	const valid = ajv.validate({
 		type: 'object',
-		required: ['name'],
+		required: ['winner', 'loser'],
 		properties: {
 			winner: { type: 'string' },
 			loser: { type: 'string' },
@@ -70,22 +71,22 @@ app.post('/game', (req, res) => {
 	connectDb
 		.then(db => db.collection('players'))
 		.then(col => {
-			col.find({ name: { $or: [req.body.winner, req.body.looser] }}).toArray()
+			col.find({ name: { $in: [req.body.winner, req.body.loser] }}).toArray()
 				.then(players => {
 					const winner = players.find(player => player.name === req.body.winner)
 					if (!winner) {
 						return res.status(400).send('winner not found')
 					}
 
-					const loser = players.find(player => player.name === req.body.looser)
+					const loser = players.find(player => player.name === req.body.loser)
 					if (!loser) {
 						return res.status(400).send('loser not found')
 					}
 
-					const winnerExpected = elo.getExpected(winner.elo, loser.elo)
-					const loserExpected = elo.getExpected(loser.elo, winner.elo)
-					const winnerElo = elo.updateRating(winnerExpected, 1, winner.elo)
-					const loserElo = elo.updateRating(loserExpected, 0, loser.elo)
+					const winnerExpected = eloRank.getExpected(winner.elo, loser.elo)
+					const loserExpected = eloRank.getExpected(loser.elo, winner.elo)
+					const winnerElo = eloRank.updateRating(winnerExpected, 1, winner.elo)
+					const loserElo = eloRank.updateRating(loserExpected, 0, loser.elo)
 
 					return Promise.all([
 							col.update({ name: winner.name }, { $set: { elo: winnerElo }}),
@@ -94,6 +95,7 @@ app.post('/game', (req, res) => {
 						.then(() => res.send('match resolved'))
 				})
 		})
+		.catch(err => res.status(500).send(err))
 })
 
 const port = process.env.PORT || 3000
