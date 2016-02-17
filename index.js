@@ -19,6 +19,14 @@ app.get('/', (req, res) => {
 		.catch(err => res.status(500).send(err))
 })
 
+app.get('/players/:playername', (req, res) => {
+	connectDb
+		.then(db => db.collection('players'))
+		.then(players => players.findOne({name: req.params.playername}))
+		.then(player => res.json(player))
+		.catch(err => res.status(500).send(err))
+})
+
 app.post('/players', (req, res) => {
 	
 	const valid = ajv.validate({
@@ -87,10 +95,19 @@ app.post('/game', (req, res) => {
 					const loserExpected = eloRank.getExpected(loser.elo, winner.elo)
 					const winnerElo = eloRank.updateRating(winnerExpected, 1, winner.elo)
 					const loserElo = eloRank.updateRating(loserExpected, 0, loser.elo)
+					const date = Date()
 
 					return Promise.all([
-							col.update({ name: winner.name }, { $set: { elo: winnerElo }}),
-							col.update({ name: loser.name }, { $set: { elo: loserElo }}),
+							col.update({ _id: mongodb.ObjectID(winner._id) }, {
+								$set: { elo: winnerElo }, 
+								$inc: { wins: 1 },
+								$push: { history: { time: date, elo: winnerElo, result: 'win'}},
+							}),
+							col.update({ _id: mongodb.ObjectID(loser._id) }, {
+								$set: { elo: loserElo },
+								$inc: { loses: 1 },
+								$push: { history: { time: date, elo: loserElo, result: 'loss' }},
+							}),
 						])
 						.then(() => res.send('match resolved'))
 				})
