@@ -15,7 +15,7 @@ app.get('/', (req, res) => {
 	connectDb
 		.then(db => db.collection('players'))
 		.then(players => players.find().sort({elo: -1}).toArray())
-		.then(playerList => res.json(playerList))
+		.then(playerList => res.json(playerList.map(player => ({name: player.name, elo: player.elo}))))
 		.catch(err => res.status(500).send(err))
 })
 
