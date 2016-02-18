@@ -91,7 +91,7 @@ app.post('/game', (req, res) => {
 					}
 
 					const delta = elo(winner.elo, loser.elo)
-					const date = Date()
+					const date = new Date()
 
 					return Promise.all([
 							col.update({ _id: mongodb.ObjectID(winner._id) }, {
@@ -108,6 +108,71 @@ app.post('/game', (req, res) => {
 		})
 		.catch(err => res.status(500).send(err.stack))
 })
+
+app.post('/game/2v2', (req, res) => {
+	const valid = ajv.validate({
+		type: 'object',
+		required: ['winners', 'losers'],
+		properties: {
+			winners: { type: 'array', items: { type: 'string' } },
+			losers: { type: 'array', items: { type: 'string' } },
+		},
+	}, req.body);
+
+	if (!valid) {
+		return res.status(400).send(ajv.errors)
+	}
+
+	const playerNames = [].concat(req.body.winners).concat(req.body.losers)
+
+	connectDb
+		.then(db => db.collection('players'))
+		.then(col => {
+			return col.find({ name: { $in: playerNames }}).toArray()
+				.then(playerDocs => {
+
+					if (playerDocs.length !== playerNames.length) {
+						return res.status(400).send('one or more players could not be found')
+					}
+
+					const winnerDocs = req.body.winners
+						.map(name => playerDocs.find(doc => doc.name === name))
+					const loserDocs = req.body.losers
+						.map(name => playerDocs.find(doc => doc.name === name))
+
+					const winnerElo = Math.round(winnerDocs
+						.reduce((elo, doc) => (elo + doc.elo), 0) / winnerDocs.length)
+
+					const losersElo = Math.round(loserDocs
+						.reduce((elo, doc) => (elo + doc.elo), 0) / loserDocs.length)
+
+					const delta = elo(winnerElo, losersElo)
+					const date = new Date()
+
+					const winnerUpdates = winnerDocs.map(doc => {
+						return col.update({ _id: mongodb.ObjectID(doc._id) }, {
+							$inc: { elo: delta, wins: 1 },
+							$push: { history: { time: date, elo: doc.elo + delta, result: 'win'}},
+						})
+					})
+
+					const loserUpdates = loserDocs.map(doc => {
+						return col.update({ _id: mongodb.ObjectID(doc._id) }, {
+							$inc: { elo: -delta, loses: 1 },
+							$push: { history: { time: date, elo: doc.elo - delta, result: 'loss'}},
+						})
+					})
+
+					return Promise.all([
+							winnerUpdates,
+							loserUpdates
+						])
+						.then(() => res.send('match resolved'))
+				})
+		})
+		.catch(err => res.status(500).send(err.stack))
+})
+
 
 const port = process.env.PORT || 3000
 app.listen(port, () => {
