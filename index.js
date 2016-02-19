@@ -96,14 +96,19 @@ app.post('/game', (req, res) => {
 					return Promise.all([
 							col.update({ _id: mongodb.ObjectID(winner._id) }, {
 								$inc: { elo: delta, wins: 1 }, 
-								$push: { history: { time: date, elo: winner.elo + delta, result: 'win'}},
+								$push: { history: { time: date, elo: winner.elo + delta, result: 'win', against: loser.name}},
 							}),
 							col.update({ _id: mongodb.ObjectID(loser._id) }, {
 								$inc: { elo: -delta, loses: 1 },
-								$push: { history: { time: date, elo: loser.elo - delta, result: 'loss' }},
+								$push: { history: { time: date, elo: loser.elo - delta, result: 'loss', against: winner.name }},
 							}),
 						])
-						.then(() => res.send('match resolved'))
+						.then(() => res.json({
+							message: 'game resolved',
+							deltaElo: delta,
+							newWinnerElo: winner.elo + delta,
+							newLoserElo: loser.elo - delta,
+						}))
 				})
 		})
 		.catch(err => res.status(500).send(err.stack))
@@ -152,14 +157,14 @@ app.post('/game/2v2', (req, res) => {
 					const winnerUpdates = winnerDocs.map(doc => {
 						return col.update({ _id: mongodb.ObjectID(doc._id) }, {
 							$inc: { elo: delta, wins: 1 },
-							$push: { history: { time: date, elo: doc.elo + delta, result: 'win'}},
+							$push: { history: { time: date, elo: doc.elo + delta, result: 'win', against: req.body.losers}},
 						})
 					})
 
 					const loserUpdates = loserDocs.map(doc => {
 						return col.update({ _id: mongodb.ObjectID(doc._id) }, {
 							$inc: { elo: -delta, loses: 1 },
-							$push: { history: { time: date, elo: doc.elo - delta, result: 'loss'}},
+							$push: { history: { time: date, elo: doc.elo - delta, result: 'loss', against: req.body.winners}},
 						})
 					})
 
@@ -167,7 +172,12 @@ app.post('/game/2v2', (req, res) => {
 							winnerUpdates,
 							loserUpdates
 						])
-						.then(() => res.send('match resolved'))
+						.then(() => res.json({
+							message: 'game resolved',
+							deltaElo: delta,
+							newWinnerElo: winnerDocs.map(doc => doc.name + ': ' + (doc.elo + delta)),
+							newLoserElo: loserDocs.map(doc => doc.name + ': ' + (doc.elo - delta)),
+						}))
 				})
 		})
 		.catch(err => res.status(500).send(err.stack))
