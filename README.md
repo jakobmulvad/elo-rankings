@@ -2,6 +2,11 @@
 
 A simple webservice to keep track of the ELO rating of the foosball players at work.
 
+Todo list:
+- Add a cli tool to update results
+- Add a web UI
+- Add IOS app
+
 ### `GET: /`
 
 Returns the entire list of players sorted by ELO rating
