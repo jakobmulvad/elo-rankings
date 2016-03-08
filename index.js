@@ -109,7 +109,7 @@ app.post('/game', (req, res) => {
 				newLoserElo: loser.elo - delta,
 			}))
 		})
-	})
+	)
 	.catch(err => res.status(500).send(err.stack))
 })
 
@@ -181,8 +181,13 @@ app.post('/game/nvn', (req, res) => {
 				newLoserElo: loserDocs.map(doc => doc.name + ': ' + (doc.elo - delta)),
 			}))
 		})
-	})
+	)
 	.catch(err => res.status(500).send(err.stack))
+})
+
+app.post('/slack-command', (req, res) => {
+	console.log(req.body)
+	res.send('command received')
 })
 
 const port = process.env.PORT || 3000
