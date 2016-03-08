@@ -113,7 +113,7 @@ app.post('/game', (req, res) => {
 	.catch(err => res.status(500).send(err.stack))
 })
 
-app.post('/game/2v2', (req, res) => {
+app.post('/game/nvn', (req, res) => {
 	const valid = ajv.validate({
 		type: 'object',
 		required: ['winners', 'losers'],
@@ -125,6 +125,10 @@ app.post('/game/2v2', (req, res) => {
 
 	if (!valid) {
 		return res.status(400).send(ajv.errors)
+	}
+
+	if (req.body.winners.length !== req.body.losers.length) {
+		return res.status(400).send('there must be an equal number of winners and losers')
 	}
 
 	const playerNames = [].concat(req.body.winners).concat(req.body.losers)
@@ -149,7 +153,7 @@ app.post('/game/2v2', (req, res) => {
 			const losersElo = Math.round(loserDocs
 				.reduce((elo, doc) => (elo + doc.elo), 0) / loserDocs.length)
 
-			const delta = elo(winnerElo, losersElo)
+			const delta = elo(winnerElo, losersElo) / winnerDocs.length
 			const date = new Date()
 
 			const winnerUpdates = winnerDocs.map(doc => {
