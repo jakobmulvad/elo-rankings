@@ -188,7 +188,16 @@ app.post('/game/nvn', (req, res) => {
 
 app.post('/slack-command', (req, res) => {
 	console.log(req.body)
-	res.send('command received')
+
+	const args = req.body.text.split(' ')
+	switch (args[0]) {
+		case 'won':
+		res.send('won command received')
+		break;
+
+		default:
+		res.send('command not recognized')
+	}
 })
 
 const port = process.env.PORT || 3000
