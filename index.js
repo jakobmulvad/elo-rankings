@@ -6,6 +6,7 @@ const elo = require('./elo')
 
 const app = express()
 app.use(bodyParser.json())
+app.use(bodyParser.urlencoded());
 
 const mongoUrl = process.env.MONGOLAB_URI || 'mongodb://localhost:27017/foosball-rankings'
 const connectDb = mongodb.MongoClient.connect(mongoUrl)
