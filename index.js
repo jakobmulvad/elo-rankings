@@ -3,6 +3,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const ajv = require('ajv')()
 const elo = require('./elo')
+const package = require('./package')
 
 const app = express()
 app.use(bodyParser.json())
@@ -10,6 +11,10 @@ app.use(bodyParser.urlencoded());
 
 const mongoUrl = process.env.MONGOLAB_URI || 'mongodb://localhost:27017/foosball-rankings'
 const connectDb = mongodb.MongoClient.connect(mongoUrl)
+.catch(err => {
+	console.error('Error connecting to database')
+	console.error(err.stack || err)
+})
 
 app.get('/', (req, res) => {
 	connectDb
@@ -203,3 +208,6 @@ const port = process.env.PORT || 3000
 app.listen(port, () => {
 	console.log('Listening on', port)
 })
+
+console.log('Foosball ranking server %s', package.version)
+console.log('Using mongo connection string "%s"', mongoUrl)
