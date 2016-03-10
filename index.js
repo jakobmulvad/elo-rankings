@@ -3,12 +3,10 @@ const bodyParser = require('body-parser')
 const elo = require('./elo')
 const package = require('./package')
 const api = require('./api')
-const slack = require('./slack')
-
-process.env.SLACK_API_TOKEN = 'xoxb-25244776611-zcP8ZuZQZ8HJmjxfduXvZ6Bj'
+const slackBot = require('./slack-bot')
 
 if (process.env.SLACK_API_TOKEN) {
-	slack.init()
+	slackBot(process.env.SLACK_API_TOKEN)
 }
 
 const app = express()
@@ -157,28 +155,6 @@ app.post('/game/nvn', (req, res) => {
 		})
 	)
 	.catch(err => res.status(500).send(err.stack))
-})
-
-app.post('/slack-command', (req, res) => {
-	console.log(req.body)
-
-	const args = req.body.text.split(' ')
-	switch (args[0]) {
-		case 'won':
-		res.send('won command received')
-		break;
-
-		default:
-		res.send('command not recognized')
-	}
-})
-
-app.use((req, res, next, err) => {
-	if (err.type === 'validation') {
-		res.status(400).send(err)
-	} else {
-		res.status(500).send(err)
-	}
 })
 
 const port = process.env.PORT || 3000
