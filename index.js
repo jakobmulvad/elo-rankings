@@ -28,7 +28,6 @@ app.get('/players/:playername', (req, res) => {
 })
 
 app.post('/players', (req, res) => {
-	
 	const valid = ajv.validate({
 		type: 'object',
 		required: ['name'],
@@ -154,7 +153,7 @@ app.post('/game/nvn', (req, res) => {
 			const losersElo = Math.round(loserDocs
 				.reduce((elo, doc) => (elo + doc.elo), 0) / loserDocs.length)
 
-			const delta = elo(winnerElo, losersElo) / winnerDocs.length
+			const delta = Math.round(elo(winnerElo, losersElo) / winnerDocs.length)
 			const date = new Date()
 
 			const winnerUpdates = winnerDocs.map(doc => {
