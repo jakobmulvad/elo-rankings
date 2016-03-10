@@ -11,6 +11,7 @@
   "author": "Jakob Mulvad Nielsen <mulvad@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "@slack/client": "^2.1.0",
     "ajv": "^3.6.2",
     "body-parser": "^1.15.0",
     "elo-rank": "^1.0.0",

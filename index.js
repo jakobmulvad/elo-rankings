@@ -1,69 +1,38 @@
-const mongodb = require('mongodb')
 const express = require('express')
 const bodyParser = require('body-parser')
-const ajv = require('ajv')()
 const elo = require('./elo')
 const package = require('./package')
+const api = require('./api')
+const slack = require('./slack')
+
+process.env.SLACK_API_TOKEN = 'xoxb-25244776611-zcP8ZuZQZ8HJmjxfduXvZ6Bj'
+
+if (process.env.SLACK_API_TOKEN) {
+	slack.init()
+}
 
 const app = express()
 app.use(bodyParser.json())
-app.use(bodyParser.urlencoded());
-
-const mongoUrl = process.env.MONGOLAB_URI || 'mongodb://localhost:27017/foosball-rankings'
-const connectDb = mongodb.MongoClient.connect(mongoUrl)
-.catch(err => {
-	console.error('Error connecting to database')
-	console.error(err.stack || err)
-})
+app.use(bodyParser.urlencoded({ extended: false }));
 
 app.get('/', (req, res) => {
-	connectDb
-	.then(db => db.collection('players'))
-	.then(players => players.find().sort({elo: -1}).toArray())
-	.then(playerList => res.json(playerList.map(player => ({name: player.name, elo: player.elo}))))
-	.catch(err => res.status(500).send(err))
+	api.getRankings()
+	.then(rankings => res.json(rankings))
+	.catch(err => res.status(500).send(err.message))
 })
 
 app.get('/players/:playername', (req, res) => {
-	connectDb
-	.then(db => db.collection('players'))
-	.then(players => players.findOne({name: req.params.playername}))
+	api.getPlayerProfile(req.params.playername)
 	.then(player => res.json(player))
-	.catch(err => res.status(500).send(err))
+	.catch(err => res.status(500).send(err.message))
 })
 
 app.post('/players', (req, res) => {
-	const valid = ajv.validate({
-		type: 'object',
-		required: ['name'],
-		properties: {
-			name: { type: 'string' },
-		},
-	}, req.body);
-
-	if (!valid) {
-		return res.status(400).send(ajv.errors)
-	}
-
-	connectDb
-	.then(db => db.collection('players'))
-	.then(players => {
-		players.findOne({name: req.body.name})
-		.then(player => {
-			if (player) {
-				return res.status(400).send('player already exists')
-			}
-
-			return players.insertOne({
-				name: req.body.name,
-				elo: 1000,
-			})
-			.then(player => {
-				return res.send('player created')
-			})
-		})
+	api.newPlayer(req.body)
+	.then(player => {
+		return res.send('player created')
 	})
-	.catch(err => res.status(500).send(err))
+	.catch(err => res.status(500).send(err.message))
 })
 
 app.post('/game', (req, res) => {
@@ -115,7 +84,7 @@ app.post('/game', (req, res) => {
 			}))
 		})
 	)
-	.catch(err => res.status(500).send(err.stack))
+	.catch(err => res.status(500).json(err.stack))
 })
 
 app.post('/game/nvn', (req, res) => {
@@ -204,10 +173,17 @@ app.post('/slack-command', (req, res) => {
 	}
 })
 
+app.use((req, res, next, err) => {
+	if (err.type === 'validation') {
+		res.status(400).send(err)
+	} else {
+		res.status(500).send(err)
+	}
+})
+
 const port = process.env.PORT || 3000
 app.listen(port, () => {
 	console.log('Listening on', port)
 })
 
 console.log('Foosball ranking server %s', package.version)
-console.log('Using mongo connection string "%s"', mongoUrl)
