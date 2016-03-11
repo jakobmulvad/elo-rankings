@@ -1,6 +1,5 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const elo = require('./elo')
 const package = require('./package')
 const api = require('./api')
 const slackBot = require('./slack-bot')
@@ -27,61 +26,13 @@ app.get('/players/:playername', (req, res) => {
 
 app.post('/players', (req, res) => {
 	api.newPlayer(req.body)
-	.then(player => {
-		return res.send('player created')
-	})
+	.then(player => res.send('player created'))
 	.catch(err => res.status(500).send(err.message))
 })
 
 app.post('/game', (req, res) => {
-	const valid = ajv.validate({
-		type: 'object',
-		required: ['winner', 'loser'],
-		properties: {
-			winner: { type: 'string' },
-			loser: { type: 'string' },
-		},
-	}, req.body);
-
-	if (!valid) {
-		return res.status(400).send(ajv.errors)
-	}
-
-	connectDb
-	.then(db => db.collection('players'))
-	.then(col => col.find({ name: { $in: [req.body.winner, req.body.loser] }}).toArray()
-		.then(players => {
-			const winner = players.find(player => player.name === req.body.winner)
-			if (!winner) {
-				return res.status(400).send('winner not found')
-			}
-
-			const loser = players.find(player => player.name === req.body.loser)
-			if (!loser) {
-				return res.status(400).send('loser not found')
-			}
-
-			const delta = elo(winner.elo, loser.elo)
-			const date = new Date()
-
-			return Promise.all([
-				col.update({ _id: mongodb.ObjectID(winner._id) }, {
-					$inc: { elo: delta, wins: 1 },
-					$push: { history: { time: date, elo: winner.elo + delta, result: 'win', against: loser.name}},
-				}),
-				col.update({ _id: mongodb.ObjectID(loser._id) }, {
-					$inc: { elo: -delta, loses: 1 },
-					$push: { history: { time: date, elo: loser.elo - delta, result: 'loss', against: winner.name }},
-				}),
-			])
-			.then(() => res.json({
-				message: 'game resolved',
-				deltaElo: delta,
-				newWinnerElo: winner.elo + delta,
-				newLoserElo: loser.elo - delta,
-			}))
-		})
-	)
+	api.resolveGame(req.body)
+	.then(result => res.json(result))
 	.catch(err => res.status(500).json(err.stack))
 })
 
