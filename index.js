@@ -37,75 +37,9 @@ app.post('/game', (req, res) => {
 })
 
 app.post('/game/nvn', (req, res) => {
-	const valid = ajv.validate({
-		type: 'object',
-		required: ['winners', 'losers'],
-		properties: {
-			winners: { type: 'array', items: { type: 'string' } },
-			losers: { type: 'array', items: { type: 'string' } },
-		},
-	}, req.body);
-
-	if (!valid) {
-		return res.status(400).send(ajv.errors)
-	}
-
-	if (req.body.winners.length !== req.body.losers.length) {
-		return res.status(400).send('there must be an equal number of winners and losers')
-	}
-
-	const playerNames = [].concat(req.body.winners).concat(req.body.losers)
-
-	connectDb
-	.then(db => db.collection('players'))
-	.then(col => col.find({ name: { $in: playerNames }}).toArray()
-		.then(playerDocs => {
-
-			if (playerDocs.length !== playerNames.length) {
-				return res.status(400).send('one or more players could not be found')
-			}
-
-			const winnerDocs = req.body.winners
-				.map(name => playerDocs.find(doc => doc.name === name))
-			const loserDocs = req.body.losers
-				.map(name => playerDocs.find(doc => doc.name === name))
-
-			const winnerElo = Math.round(winnerDocs
-				.reduce((elo, doc) => (elo + doc.elo), 0) / winnerDocs.length)
-
-			const losersElo = Math.round(loserDocs
-				.reduce((elo, doc) => (elo + doc.elo), 0) / loserDocs.length)
-
-			const delta = Math.round(elo(winnerElo, losersElo) / winnerDocs.length)
-			const date = new Date()
-
-			const winnerUpdates = winnerDocs.map(doc => {
-				return col.update({ _id: mongodb.ObjectID(doc._id) }, {
-					$inc: { elo: delta, wins: 1 },
-					$push: { history: { time: date, elo: doc.elo + delta, result: 'win', against: req.body.losers}},
-				})
-			})
-
-			const loserUpdates = loserDocs.map(doc => {
-				return col.update({ _id: mongodb.ObjectID(doc._id) }, {
-					$inc: { elo: -delta, loses: 1 },
-					$push: { history: { time: date, elo: doc.elo - delta, result: 'loss', against: req.body.winners}},
-				})
-			})
-
-			return Promise.all([
-				winnerUpdates,
-				loserUpdates
-			])
-			.then(() => res.json({
-				message: 'game resolved',
-				deltaElo: delta,
-				newWinnerElo: winnerDocs.map(doc => doc.name + ': ' + (doc.elo + delta)),
-				newLoserElo: loserDocs.map(doc => doc.name + ': ' + (doc.elo - delta)),
-			}))
-		})
-	)
-	.catch(err => res.status(500).send(err.stack))
+	api.resolveGameNvN(req.body)
+	.then(result => res.json(result))
+	.catch(err => res.status(500).json(err.stack))
 })
 
 const port = process.env.PORT || 3000
