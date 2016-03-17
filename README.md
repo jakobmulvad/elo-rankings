@@ -44,7 +44,7 @@ Request body:
 
 #### `POST: /game/nvn`
 
-Calculates and updates the Elo rating of the winners and losers of a N vs N game. The number of winners and losers must be the same for this calucation to work.
+Calculates and updates the Elo rating of the winners and losers of a N vs N game. The number of winners and losers must be the same for this calculation to work.
 
 Request body:
 ```
