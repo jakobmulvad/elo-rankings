@@ -126,8 +126,7 @@ const api = {
 
 		const playerNames = [].concat(query.winners).concat(query.losers)
 
-		connectDb
-		.then(db => db.collection('players'))
+		return getCollection('players')
 		.then(col => col.find({ name: { $in: playerNames }}).toArray()
 			.then(playerDocs => {
 
@@ -137,7 +136,7 @@ const api = {
 
 				const winnerDocs = query.winners
 					.map(name => playerDocs.find(doc => doc.name === name))
-				const loserDocs = req.body.losers
+				const loserDocs = query.losers
 					.map(name => playerDocs.find(doc => doc.name === name))
 
 				const winnerElo = Math.round(winnerDocs
@@ -152,14 +151,14 @@ const api = {
 				const winnerUpdates = winnerDocs.map(doc => {
 					return col.update({ _id: mongodb.ObjectID(doc._id) }, {
 						$inc: { elo: delta, wins: 1 },
-						$push: { history: { time: date, elo: doc.elo + delta, result: 'win', against: req.body.losers}},
+						$push: { history: { time: date, elo: doc.elo + delta, result: 'win', against: query.losers}},
 					})
 				})
 
 				const loserUpdates = loserDocs.map(doc => {
 					return col.update({ _id: mongodb.ObjectID(doc._id) }, {
 						$inc: { elo: -delta, loses: 1 },
-						$push: { history: { time: date, elo: doc.elo - delta, result: 'loss', against: req.body.winners}},
+						$push: { history: { time: date, elo: doc.elo - delta, result: 'loss', against: query.winners}},
 					})
 				})
 

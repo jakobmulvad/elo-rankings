@@ -59,7 +59,6 @@ module.exports = function(apiToken) {
 	const rtm = new RtmClient(apiToken, {logLevel: 'error'})
 	rtm.start()
 	rtm.on(RTM_EVENTS.MESSAGE, function (message) {
-		console.log(message)
 		if (!message.text) {
 			return
 		}
