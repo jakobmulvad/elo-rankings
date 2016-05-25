@@ -2,6 +2,9 @@
   "name": "foosball-rankings",
   "version": "3.0.0",
   "description": "",
+  "engine": {
+    "node": "4.x"
+  },
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
