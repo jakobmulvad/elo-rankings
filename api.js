@@ -37,24 +37,25 @@ const api = {
 			required: ['name'],
 			properties: {
 				name: { type: 'string' },
+				elo: { type: 'number' },
 			},
 		}, query);
 
 		if (!valid) {
-			throw ajv.errors
+			return Promise.reject(ajv.errors)
 		}
 
 		return getCollection('players')
 		.then(players => {
-			players.findOne({name: query.name})
+			return players.findOne({name: query.name})
 			.then(player => {
 				if (player) {
-					throw new Error('player already exists')
+					throw { message: 'player already exists' }
 				}
 
 				return players.insertOne({
 					name: query.name,
-					elo: 1000,
+					elo: ('elo' in query) ? query.elo : 1000,
 				})
 			})
 		})

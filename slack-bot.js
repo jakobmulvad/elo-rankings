@@ -85,5 +85,6 @@ module.exports = function(apiToken) {
 	rtm.on(CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, function () {
 		console.log('Slack connected')
 		// rtm client can now be used
+		rtm.sendMessage('Foosball Rankings v' + package.version + ' online')
 	})
 }

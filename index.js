@@ -55,10 +55,12 @@ app.listen(port, () => {
 
 function handleError(res) {
 	return function(err) {
+		console.error(err)
 
 		if (err instanceof Error) {
 			return res.status(500).json({ message: err.message, stack: err.stack })
 		}
+
 		return res.status(400).json(err)
 	} 
 }
