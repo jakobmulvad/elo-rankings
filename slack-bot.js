@@ -79,10 +79,10 @@ module.exports = function(apiToken) {
 
 	rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
 		console.log('Slack authenticated')
-		rtm.sendMessage('Foosball Rankings v' + package.version + ' online')
 	})
 
 	rtm.on(CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, function () {
 		console.log('Slack connected')
+		rtm.sendMessage('Foosball Rankings v' + package.version + ' online', channel)
 	})
 }
