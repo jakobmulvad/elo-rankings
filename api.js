@@ -22,6 +22,15 @@ const api = {
 		.then(playerList => playerList.map(player => ({name: player.name, elo: player.elo})))
 	},
 
+	getHistory: function() {
+		return getCollection('history')
+		.then(history => history.find().toArray())
+		.then(historyJson => historyJson.map(doc => {
+			delete doc._id
+			return doc
+		}))
+	},
+
 	newPlayer: function(query) {
 		const valid = ajv.validate({
 			type: 'object',
@@ -32,7 +41,7 @@ const api = {
 		}, query);
 
 		if (!valid) {
-			throw new Error(ajv.errors)
+			throw ajv.errors
 		}
 
 		return getCollection('players')
@@ -67,43 +76,13 @@ const api = {
 		}, query);
 
 		if (!valid) {
-			throw new Error(ajv.errors)
+			throw ajv.errors
 		}
 
-		return getCollection('players')
-		.then(col => col.find({ name: { $in: [query.winner, query.loser] }}).toArray()
-			.then(players => {
-				const winner = players.find(player => player.name === query.winner)
-				if (!winner) {
-					return res.status(400).send('winner not found')
-				}
-
-				const loser = players.find(player => player.name === query.loser)
-				if (!loser) {
-					return res.status(400).send('loser not found')
-				}
-
-				const delta = elo(winner.elo, loser.elo)
-				const date = new Date()
-
-				return Promise.all([
-					col.update({ _id: mongodb.ObjectID(winner._id) }, {
-						$inc: { elo: delta, wins: 1 },
-						$push: { history: { time: date, elo: winner.elo + delta, result: 'win', against: loser.name}},
-					}),
-					col.update({ _id: mongodb.ObjectID(loser._id) }, {
-						$inc: { elo: -delta, loses: 1 },
-						$push: { history: { time: date, elo: loser.elo - delta, result: 'loss', against: winner.name }},
-					}),
-				])
-				.then(() => ({
-					message: 'game resolved',
-					deltaElo: delta,
-					newWinnerElo: winner.elo + delta,
-					newLoserElo: loser.elo - delta,
-				}))
-			})
-		)
+		return api.resolveGameNvN({
+			winners: [query.winner],
+			losers: [query.loser],
+		})
 	},
 
 	resolveGameNvN: function(query) {
@@ -127,7 +106,7 @@ const api = {
 		const playerNames = [].concat(query.winners).concat(query.losers)
 
 		return getCollection('players')
-		.then(col => col.find({ name: { $in: playerNames }}).toArray()
+		.then(players => players.find({ name: { $in: playerNames }}).toArray()
 			.then(playerDocs => {
 
 				if (playerDocs.length !== playerNames.length) {
@@ -149,28 +128,39 @@ const api = {
 				const date = new Date()
 
 				const winnerUpdates = winnerDocs.map(doc => {
-					return col.update({ _id: mongodb.ObjectID(doc._id) }, {
+					return players.update({ _id: mongodb.ObjectID(doc._id) }, {
 						$inc: { elo: delta, wins: 1 },
-						$push: { history: { time: date, elo: doc.elo + delta, result: 'win', against: query.losers}},
 					})
 				})
 
 				const loserUpdates = loserDocs.map(doc => {
-					return col.update({ _id: mongodb.ObjectID(doc._id) }, {
+					return players.update({ _id: mongodb.ObjectID(doc._id) }, {
 						$inc: { elo: -delta, loses: 1 },
-						$push: { history: { time: date, elo: doc.elo - delta, result: 'loss', against: query.winners}},
 					})
 				})
 
+				const historyUpdate = getCollection('history')
+				.then(history => history.insertOne({
+					time: date, 
+					players: playerNames,
+					winners: query.winners,
+					losers: query.losers,
+					deltaElo: delta, 
+					elo: playerNames
+						.map(name => playerDocs.find(doc => doc.name === name))
+						.map(doc => doc.elo + delta),
+				}))
+
 				return Promise.all([
 					winnerUpdates,
-					loserUpdates
+					loserUpdates,
+					historyUpdate,
 				])
 				.then(() => ({
 					message: 'game resolved',
 					deltaElo: delta,
-					newWinnerElo: winnerDocs.map(doc => doc.name + ': ' + (doc.elo + delta)),
-					newLoserElo: loserDocs.map(doc => doc.name + ': ' + (doc.elo - delta)),
+					newWinnerElo: winnerDocs.map(doc => ({ name: doc.name, elo: (doc.elo + delta)})),
+					newLoserElo:  loserDocs.map(doc => ({ name: doc.name, elo: (doc.elo - delta)})),
 				}))
 			})
 		)
