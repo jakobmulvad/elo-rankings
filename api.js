@@ -141,14 +141,13 @@ const api = {
 
 				const historyUpdate = getCollection('history')
 				.then(history => history.insertOne({
-					time: date, 
-					players: playerNames,
+					time: date,
+					players: playerNames
+						.map(name => playerDocs.find(doc => doc.name === name))
+						.map(doc => ({ name: doc.name, elo: doc.elo + delta})),
 					winners: query.winners,
 					losers: query.losers,
-					deltaElo: delta, 
-					elo: playerNames
-						.map(name => playerDocs.find(doc => doc.name === name))
-						.map(doc => doc.elo + delta),
+					deltaElo: delta,
 				}))
 
 				return Promise.all([
