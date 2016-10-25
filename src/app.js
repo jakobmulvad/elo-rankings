@@ -1,12 +1,8 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const package = require('./package')
+const package = require('../package')
 const api = require('./api')
 const slackBot = require('./slack-bot')
-
-if (process.env.SLACK_API_TOKEN) {
-	slackBot(process.env.SLACK_API_TOKEN)
-}
 
 const app = express()
 app.use(bodyParser.json())
@@ -48,11 +44,6 @@ app.get('/history', (req, res) => {
 	.catch(handleError(res))
 })
 
-const port = process.env.PORT || 3000
-app.listen(port, () => {
-	console.log('Listening on', port)
-})
-
 function handleError(res) {
 	return function(err) {
 		console.error(err)
@@ -65,4 +56,4 @@ function handleError(res) {
 	} 
 }
 
-console.log('Foosball ranking server %s', package.version)
+module.exports = app;
