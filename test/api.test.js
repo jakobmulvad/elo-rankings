@@ -48,11 +48,13 @@ describe('api.js', function() {
 
 	describe('Calling getRankings()', function() {
 		beforeEach(function() {
-			return Promise.all([
-				api.newPlayer({ name: 'alice', elo: 1000 }),
-				api.newPlayer({ name: 'bob', elo: 900 }),
-				api.newPlayer({ name: 'charlie', elo: 1100 }),
-			])
+			return getPlayers.then(players => {
+				return players.insertMany([
+					{ name: 'alice', elo: 1000 },
+					{ name: 'bob', elo: 900 },
+					{ name: 'charlie', elo: 1100 },
+				])
+			})
 			.then(() => api.getRankings())
 			.then(rankings => this.rankings = rankings)
 		})
