@@ -8,7 +8,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "keywords": [],
   "author": "Jakob Mulvad Nielsen <mulvad@gmail.com>",
@@ -20,5 +20,9 @@
     "elo-rank": "^1.0.0",
     "express": "^4.13.4",
     "mongodb": "^2.1.7"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.1.2"
   }
 }

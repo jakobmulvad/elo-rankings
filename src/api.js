@@ -1,18 +1,9 @@
-const mongodb = require('mongodb')
+const getDb = require('./get-db')
 const ajv = require('ajv')()
 const elo = require('./elo')
 
-const mongoUrl = process.env.MONGO_URI || 'mongodb://localhost:27017/foosball-rankings'
-const connectDb = mongodb.MongoClient.connect(mongoUrl)
-.catch(err => {
-	console.error('Error connecting to database')
-	console.error(err.stack || err)
-})
-
-console.log('Using mongo connection string "%s"', mongoUrl)
-
 function getCollection(collection) {
-	return connectDb.then(db => db.collection(collection))
+	return getDb.then(db => db.collection(collection))
 }
 
 const api = {
