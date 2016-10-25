@@ -78,4 +78,24 @@ describe('api.js', function() {
 			})
 		})
 	})
+
+	describe.skip('Calling resolveGame()', function() {
+		beforeEach(function() {
+			return getPlayers.then(players => {
+				return players.insertMany([
+					{ name: 'alice', elo: 1000 },
+					{ name: 'bob', elo: 900 },
+					{ name: 'charlie', elo: 1100 },
+				])
+			})
+		})
+
+		it('should update the winner with higher elo', function(done) {
+			api.resolveGame({ winner: 'alice', loser: 'bob' })
+			.then(resolved => {
+				console.log('game resolved', resolved);
+			})
+			.then(done, done)
+		})
+	})
 })
