@@ -1,28 +1,67 @@
 const api = require('../src/api')
 const getDb = require('../src/get-db')
+const getPlayers = getDb.then(db => db.collection('players'))
 
 describe('api.js', function() {
-	describe('Calling getRankings()', function() {
-		beforeEach(function() {
-			return getDb.then(db => db.dropDatabase())
-			.then(() => api.newPlayer({
-				name: 'alice',
-				elo: 1000
-			}))
-			.then(() => api.newPlayer({
-				name: 'bob',
-				elo: 900
-			}))
-			.then(() => api.newPlayer({
-				name: 'charlie',
-				elo: 1100
-			}))
-			.then(() => api.getRankings())
-			.then(rankings => this.rankings = rankings);
+	beforeEach(function() {
+		return getDb.then(db => db.dropDatabase())
+	})
+
+	describe('Calling newPlayer()', function() {
+		describe('with a name and a starting elo rating', function() {
+			beforeEach(function() {
+				return api.newPlayer({
+					name: 'alice',
+					elo: 1234,
+				})
+			})
+
+			it('should create a new document in the players collection with the correct name and elo', function(done) {
+				getPlayers.then(players => players.find().toArray())
+				.then(players => {
+					expect(players).to.have.length(1)
+					expect(players[0]).to.have.property('name', 'alice')
+					expect(players[0]).to.have.property('elo', 1234)
+				})
+				.then(done,done)
+			})
 		})
 
-		it('should return a list of players and their ratings, sorted by rating', function() {
+		describe('with only a name', function() {
+			beforeEach(function() {
+				return api.newPlayer({
+					name: 'alice',
+				})
+			})
+
+			it('should create a new document in the players collection with the correct name and a default elo', function(done) {
+				getPlayers.then(players => players.find().toArray())
+				.then(players => {
+					expect(players).to.have.length(1)
+					expect(players[0]).to.have.property('name', 'alice')
+					expect(players[0]).to.have.property('elo')
+				})
+				.then(done,done)
+			})
+		})
+	});
+
+	describe('Calling getRankings()', function() {
+		beforeEach(function() {
+			return Promise.all([
+				api.newPlayer({ name: 'alice', elo: 1000 }),
+				api.newPlayer({ name: 'bob', elo: 900 }),
+				api.newPlayer({ name: 'charlie', elo: 1100 }),
+			])
+			.then(() => api.getRankings())
+			.then(rankings => this.rankings = rankings)
+		})
+
+		it('should return a list that includes all players', function() {
 			expect(this.rankings).to.have.length(3)
+		});
+
+		it('should return a list of player names and their ratings, sorted by rating', function() {
 			expect(this.rankings[0]).to.deep.equal({
 				name: 'charlie',
 				elo: 1100,
