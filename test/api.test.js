@@ -4,7 +4,7 @@ const getPlayers = getDb.then(db => db.collection('players'))
 
 describe('api.js', function() {
 	beforeEach(function() {
-		return getDb.then(db => db.dropDatabase())
+		return getPlayers.then(players => players.deleteMany())
 	})
 
 	describe('Calling newPlayer()', function() {
@@ -61,7 +61,7 @@ describe('api.js', function() {
 
 		it('should return a list that includes all players', function() {
 			expect(this.rankings).to.have.length(3)
-		});
+		})
 
 		it('should return a list of player names and their ratings, sorted by rating', function() {
 			expect(this.rankings[0]).to.deep.equal({
@@ -79,7 +79,7 @@ describe('api.js', function() {
 		})
 	})
 
-	describe.skip('Calling resolveGame()', function() {
+	describe('Calling resolveGame()', function() {
 		beforeEach(function() {
 			return getPlayers.then(players => {
 				return players.insertMany([
@@ -88,14 +88,27 @@ describe('api.js', function() {
 					{ name: 'charlie', elo: 1100 },
 				])
 			})
+			.then(() => api.resolveGame({ winner: 'alice', loser: 'bob' }))
 		})
 
-		it('should update the winner with higher elo', function(done) {
-			api.resolveGame({ winner: 'alice', loser: 'bob' })
-			.then(resolved => {
-				console.log('game resolved', resolved);
+		it('should update the winner with higher elo', function() {
+			return getPlayers
+			.then(players => players.findOne({ name: 'alice'}))
+			.then(alice => {
+				expect(alice)
+				.to.have.property('elo')
+				.to.be.above(1000)
 			})
-			.then(done, done)
+		})
+
+		it('should update the loser with lower elo', function() {
+			return getPlayers
+			.then(players => players.findOne({ name: 'bob'}))
+			.then(bob => {
+				expect(bob)
+				.to.have.property('elo')
+				.to.be.below(900)
+			})
 		})
 	})
 })
