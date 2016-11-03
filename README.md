@@ -59,3 +59,7 @@ Request body:
   ]
 }
 ```
+
+### License
+
+This software can be used under the ISC license
