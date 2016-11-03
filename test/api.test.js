@@ -1,10 +1,14 @@
 const api = require('../src/api')
 const getDb = require('../src/get-db')
 const getPlayers = getDb.then(db => db.collection('players'))
+const getHistory = getDb.then(db => db.collection('history'))
 
 describe('api.js', function() {
 	beforeEach(function() {
-		return getPlayers.then(players => players.deleteMany())
+		return Promise.all([
+			getPlayers.then(players => players.deleteMany()),
+			getHistory.then(history => history.deleteMany()),
+		])
 	})
 
 	describe('Calling newPlayer()', function() {
@@ -101,6 +105,16 @@ describe('api.js', function() {
 			})
 		})
 
+		it('should update the winner with a win', function() {
+			return getPlayers
+			.then(players => players.findOne({ name: 'alice'}))
+			.then(alice => {
+				expect(alice)
+				.to.have.property('wins')
+				.to.equal(1)
+			})
+		})
+
 		it('should update the loser with lower elo', function() {
 			return getPlayers
 			.then(players => players.findOne({ name: 'bob'}))
@@ -108,6 +122,31 @@ describe('api.js', function() {
 				expect(bob)
 				.to.have.property('elo')
 				.to.be.below(900)
+			})
+		})
+
+		it('should update the loser with a loss', function() {
+			return getPlayers
+			.then(players => players.findOne({ name: 'bob'}))
+			.then(bob => {
+				expect(bob)
+				.to.have.property('loses')
+				.to.equal(1)
+			})
+		})
+
+		it('should update the history with a new game', function() {
+			return getHistory
+			.then(historyCollection => historyCollection.find().toArray())
+			.then(history => {
+				expect(history)
+				.to.have.length(1)
+				expect(history[0])
+				.to.have.property('winners')
+				.to.deep.equal(['alice'])
+				expect(history[0])
+				.to.have.property('losers')
+				.to.deep.equal(['bob'])
 			})
 		})
 	})
