@@ -11,7 +11,6 @@ const api = {
 	getRankings: function() {
 		return getCollection('players')
 		.then(players => players.find().sort({elo: -1}).toArray())
-		.then(playerList => playerList.map(player => ({name: player.name, elo: player.elo})))
 	},
 
 	getHistory: function() {
