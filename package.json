@@ -3,7 +3,7 @@
   "version": "3.1.2",
   "description": "",
   "engine": {
-    "node": "4.x"
+    "node": "6.x"
   },
   "main": "index.js",
   "scripts": {
@@ -14,8 +14,8 @@
   "author": "Jakob Mulvad Nielsen <mulvad@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "@slack/client": "^2.1.0",
-    "ajv": "^3.6.2",
+    "@slack/client": "^3.8.1",
+    "ajv": "^4.11.3",
     "body-parser": "^1.15.0",
     "elo-rank": "^1.0.0",
     "express": "^4.13.4",
