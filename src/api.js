@@ -11,7 +11,6 @@ const api = {
 	getRankings: function() {
 		return getCollection('players')
 		.then(players => players.find().sort({elo: -1}).toArray())
-		.then(playerList => playerList.map(player => ({name: player.name, elo: player.elo})))
 	},
 
 	getHistory: function() {
@@ -76,6 +75,13 @@ const api = {
 			winners: [query.winner],
 			losers: [query.loser],
 		})
+		.then(res => ({
+			message: res.message,
+			winner: res.winners[0],
+			loser: res.losers[0],
+			deltaElo: res.deltaElo,
+			probability: res.probability,
+		}))
 	},
 
 	resolveGameNvN: function(query) {
@@ -111,24 +117,26 @@ const api = {
 				const loserDocs = query.losers
 					.map(name => playerDocs.find(doc => doc.name === name))
 
-				const winnerElo = Math.round(winnerDocs
+				const winnersElo = Math.round(winnerDocs
 					.reduce((elo, doc) => (elo + doc.elo), 0) / winnerDocs.length)
 
 				const losersElo = Math.round(loserDocs
 					.reduce((elo, doc) => (elo + doc.elo), 0) / loserDocs.length)
 
-				const delta = Math.round(elo(winnerElo, losersElo) / winnerDocs.length)
+				const delta = Math.round(elo(winnersElo, losersElo) / winnerDocs.length)
 				const date = new Date()
 
 				const winnerUpdates = winnerDocs.map(doc => {
 					return players.update({ _id: mongodb.ObjectID(doc._id) }, {
 						$inc: { elo: delta, wins: 1 },
+						$set: { lastActivity: new Date() },
 					})
 				})
 
 				const loserUpdates = loserDocs.map(doc => {
 					return players.update({ _id: mongodb.ObjectID(doc._id) }, {
 						$inc: { elo: -delta, loses: 1 },
+						$set: { lastActivity: new Date() },
 					})
 				})
 
@@ -151,8 +159,9 @@ const api = {
 				.then(() => ({
 					message: 'game resolved',
 					deltaElo: delta,
-					newWinnerElo: winnerDocs.map(doc => ({ name: doc.name, elo: (doc.elo + delta)})),
-					newLoserElo:  loserDocs.map(doc => ({ name: doc.name, elo: (doc.elo - delta)})),
+					winners: winnerDocs.map(doc => ({ name: doc.name, elo: (doc.elo + delta)})),
+					losers:  loserDocs.map(doc => ({ name: doc.name, elo: (doc.elo - delta)})),
+					probability: 1-elo(winnersElo, losersElo, 1),
 				}))
 			})
 		)

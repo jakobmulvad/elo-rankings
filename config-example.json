@@ -1,0 +1,5 @@
+{
+	"slackApiToken": "some token",
+	"mongoUrl": "some url",
+	"slackChannel": "#foosbot"
+}

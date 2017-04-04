@@ -1,8 +1,10 @@
-const app = require('./app')
+const app = require('./http')
 const slackBot = require('./slack-bot')
+const package = require('../package')
+const config = require('./config')
 
-if (process.env.SLACK_API_TOKEN) {
-	slackBot(process.env.SLACK_API_TOKEN)
+if (config.slackApiToken) {
+	slackBot(config.slackApiToken)
 }
 
 const port = process.env.PORT || 3000

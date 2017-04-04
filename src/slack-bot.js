@@ -1,11 +1,12 @@
 const RtmClient = require('@slack/client').RtmClient
-const CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS
+const MemoryDataStore = require('@slack/client').MemoryDataStore;
+const RTM_CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS.RTM
 const RTM_EVENTS = require('@slack/client').RTM_EVENTS
 const api = require('./api')
-const package = require('./package')
-
-const bot = 'U0R76NUHZ'
-const channel = 'C0R7DAP5L'
+const package = require('../package')
+const config = require('./config')
+let channel
+const ONE_MONTH = 1000 * 60 * 60 * 24 * 30
 
 const commands = {
 	'help': {
@@ -17,14 +18,37 @@ const commands = {
 			rtm.sendMessage('Foosball Rankings ' + package.version + '\nAvailable commands:\n```' + topics.join('\n') + '```', channel)
 		}
 	},
+	'newplayer': {
+		description: 'Creates a new player',
+		usage: '!createPlayer <name>',
+		handler: (rtm, args) => {
+			if (!Array.isArray(args) || args.length !== 1) {
+				return rtm.sendMessage('Missing player name', channel)
+			}
+
+			api.newPlayer({
+				name: args[0]
+			})
+			.then(doc => {
+				rtm.sendMessage('Player created\n```' + JSON.stringify(doc) + '```', channel);
+			})
+			.catch(err => {
+				rtm.sendMessage('Failed to create player\n```' + JSON.stringify(err) + '```', channel)
+			})
+		}
+	},
 	'rank': {
-		description: 'Get the current rankings',
-		usage: '!rank',
-		handler: rtm => {
+		description: 'Gets the current rankings. Defaults to only showing active players.',
+		usage: '!rank [all]',
+		handler: (rtm, args) => {
 			api.getRankings()
 			.then(rankings => {
+				if (!args.length || args[0] !== 'all') {
+					rankings = rankings.filter(ranking => ranking.lastActivity && Date.now() - ranking.lastActivity.getTime() < ONE_MONTH)
+				}
+
 				const heading = 'The rankings as of ' + new Date().toJSON() + ':\n'
-				rankings = rankings.map(rank => rank.name + '.'.repeat(10 - (rank.name + rank.elo).length) + rank.elo)
+				rankings = rankings.map(rank => rank.name + '.'.repeat(11 - (rank.name + rank.elo).length) + rank.elo)
 				rtm.sendMessage(heading + '```' + rankings.join('\n') + '```', channel)
 			})
 			.catch(err => console.error(err.stack || err.message || err))
@@ -45,7 +69,13 @@ const commands = {
 			})
 			.then(res => {
 				delete res.message
-				rtm.sendMessage('Game was resolved\n```' + JSON.stringify(res) + '```', channel)
+				const lines = [
+					'Game was resolved',
+					`Winner: :trophy:${res.winner.name} ${res.winner.elo} (+${res.deltaElo})`,
+					`Loser: :poop:${res.loser.name} ${res.loser.elo} (-${res.deltaElo})`,
+					`Probability: ${Math.round(res.probability * 100)}%`
+				]
+				rtm.sendMessage(lines.join('\n'), channel)
 			})
 			.catch(err => {
 				rtm.sendMessage('Failed to resolve game\n```' + JSON.stringify(err) + '```', channel)
@@ -56,7 +86,11 @@ const commands = {
 }
 
 module.exports = function(apiToken) {
-	const rtm = new RtmClient(apiToken, {logLevel: 'error'})
+	const rtm = new RtmClient(apiToken, {
+		logLevel: 'error',
+		dataStore: new MemoryDataStore(),
+	})
+
 	rtm.start()
 	rtm.on(RTM_EVENTS.MESSAGE, function (message) {
 		if (!message.text) {
@@ -77,12 +111,15 @@ module.exports = function(apiToken) {
 		}
 	})
 
-	rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
+	rtm.on(RTM_CLIENT_EVENTS.AUTHENTICATED, function (rtmStartData) {
 		console.log('Slack authenticated')
+		channel = rtm.dataStore.getChannelByName(config.slackChannel).id
 	})
 
-	rtm.on(CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, function () {
+	rtm.on(RTM_CLIENT_EVENTS.RTM_CONNECTION_OPENED, function () {
 		console.log('Slack connected')
-		rtm.sendMessage('Foosball Rankings v' + package.version + ' online', channel)
+		rtm.sendMessage('Foosball Rankings v' + package.version + ' online')
 	})
+
+	console.log('Connecting slackbot...')
 }
