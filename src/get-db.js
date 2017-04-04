@@ -6,6 +6,4 @@ const connection = mongodb.MongoClient.connect(config.mongoUrl)
 	console.error(err.stack || err)
 })
 
-console.log('Using mongo connection string "%s"', config.mongoUrl)
-
 module.exports = connection
