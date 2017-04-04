@@ -68,18 +68,14 @@ describe('api.js', function() {
 		})
 
 		it('should return a list of player names and their ratings, sorted by rating', function() {
-			expect(this.rankings[0]).to.deep.equal({
-				name: 'charlie',
-				elo: 1100,
-			})
-			expect(this.rankings[1]).to.deep.equal({
-				name: 'alice',
-				elo: 1000,
-			})
-			expect(this.rankings[2]).to.deep.equal({
-				name: 'bob',
-				elo: 900,
-			})
+			expect(this.rankings[0]).to.have.property('name', 'charlie')
+			expect(this.rankings[0]).to.have.property('elo', 1100)
+
+			expect(this.rankings[1]).to.have.property('name', 'alice')
+			expect(this.rankings[1]).to.have.property('elo', 1000)
+
+			expect(this.rankings[2]).to.have.property('name', 'bob')
+			expect(this.rankings[2]).to.have.property('elo', 900)
 		})
 	})
 
@@ -112,6 +108,17 @@ describe('api.js', function() {
 				expect(alice)
 				.to.have.property('wins')
 				.to.equal(1)
+			})
+		})
+
+		it('should update the winner with an activity timestamp', function() {
+			return getPlayers
+			.then(players => players.findOne({ name: 'alice'}))
+			.then(alice => {
+				expect(alice)
+				.to.have.property('lastActivity')
+				expect(Date.now() - alice.lastActivity.getTime())
+				.to.be.below(100)
 			})
 		})
 

@@ -122,12 +122,14 @@ const api = {
 				const winnerUpdates = winnerDocs.map(doc => {
 					return players.update({ _id: mongodb.ObjectID(doc._id) }, {
 						$inc: { elo: delta, wins: 1 },
+						$set: { lastActivity: new Date() },
 					})
 				})
 
 				const loserUpdates = loserDocs.map(doc => {
 					return players.update({ _id: mongodb.ObjectID(doc._id) }, {
 						$inc: { elo: -delta, loses: 1 },
+						$set: { lastActivity: new Date() },
 					})
 				})
 
