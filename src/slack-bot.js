@@ -8,6 +8,14 @@ const config = require('./config')
 const channel = config.slackChannel
 
 const commands = {
+	'iam': {
+		description: 'Links your slack user to a foosbot player',
+		usage: '!iam <username>',
+		handler: rtm => {
+			const user = rtm.dataStore.getUserById(data.user)
+			console.log(user)
+		}
+	}
 	'help': {
 		description: 'Gets the list of available commands',
 		usage: '!help',
@@ -40,7 +48,7 @@ const commands = {
 		handler: (rtm, args) => {
 			api.getRankings()
 			.then(rankings => {
-				console.log(rankings);
+				console.log(rankings)
 				if (!args.length || args[0] !== 'all') {
 					//rankings = rankings.filter
 				}
