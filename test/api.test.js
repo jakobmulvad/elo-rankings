@@ -142,6 +142,17 @@ describe('api.js', function() {
 			})
 		})
 
+		it('should update the loser with an activity timestamp', function() {
+			return getPlayers
+			.then(players => players.findOne({ name: 'bob'}))
+			.then(bob => {
+				expect(bob)
+				.to.have.property('lastActivity')
+				expect(Date.now() - bob.lastActivity.getTime())
+				.to.be.below(1000)
+			})
+		})
+
 		it('should update the history with a new game', function() {
 			return getHistory
 			.then(historyCollection => historyCollection.find().toArray())
