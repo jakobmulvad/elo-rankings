@@ -118,7 +118,7 @@ describe('api.js', function() {
 				expect(alice)
 				.to.have.property('lastActivity')
 				expect(Date.now() - alice.lastActivity.getTime())
-				.to.be.below(100)
+				.to.be.below(1000)
 			})
 		})
 
