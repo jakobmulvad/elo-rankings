@@ -1,10 +1,11 @@
+[![Build Status](https://travis-ci.org/jakobmulvad/foosball-rankings.svg?branch=master)](https://travis-ci.org/jakobmulvad/foosball-rankings)
 # foosball-rankings
 
 A simple webservice to keep track of the Elo rating of the foosball players at work. Read more about Elo rating here: https://en.wikipedia.org/wiki/Elo_rating_system
 
 ### Run the server
 
-Run the default script with node 4.x
+Run the default script with node 6.x
 
 `node .`
 
