@@ -1,6 +1,7 @@
-const eloRank = require('elo-rank')()
+const EloRank = require('elo-rank')
+const elo = new EloRank()
 
 module.exports = (winnerElo, loserElo, kFactor) => {
-	const expected = eloRank.getExpected(winnerElo, loserElo)
+	const expected = elo.getExpected(winnerElo, loserElo)
 	return (kFactor || 32) * (1-expected)
 }
