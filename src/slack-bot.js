@@ -20,7 +20,7 @@ const commands = {
 	},
 	'newplayer': {
 		description: 'Creates a new player',
-		usage: '!createPlayer <name>',
+		usage: '!newplayer <name>',
 		handler: (rtm, args) => {
 			if (!Array.isArray(args) || args.length !== 1) {
 				return rtm.sendMessage('Missing player name', channel)
