@@ -141,12 +141,20 @@ const api = {
 			})
 		})
 
+		const playerObjects = playerNames
+			.map(name => playerDocs.find(doc => doc.name === name))
+			.map(doc => {
+				const isWinner = query.winners.some(winner => winner == doc.name);
+				return {
+					name: doc.name,
+					elo: doc.elo + (isWinner ? delta : -delta)
+				}
+			})
+
 		const history = await getCollection('history')
 		const historyUpdate = history.insertOne({
 			time: date,
-			players: playerNames
-				.map(name => playerDocs.find(doc => doc.name === name))
-				.map(doc => ({ name: doc.name, elo: doc.elo + delta})),
+			players: playerObjects,
 			winners: query.winners,
 			losers: query.losers,
 			deltaElo: delta,
@@ -169,6 +177,37 @@ const api = {
 
 	undoLastGame: async function() {
 		const history = await getCollection('history')
+		const players = await getCollection('players')
+		const lastGame = await history.findOne({},{sort: {time: -1}})
+		const winnerDocs = await players.find({ name: { $in: lastGame.winners }}).toArray()
+		const loserDocs = await players.find({ name: { $in: lastGame.losers }}).toArray()
+
+		const winnerUpdates = winnerDocs.map(doc => {
+			return players.update({ _id: mongodb.ObjectID(doc._id) }, {
+				$inc: { elo: -lastGame.deltaElo, wins: -1 },
+			})
+		})
+
+		const loserUpdates = loserDocs.map(doc => {
+			return players.update({ _id: mongodb.ObjectID(doc._id) }, {
+				$inc: { elo: lastGame.deltaElo, loses: -1 },
+			})
+		})
+
+		const historyUpdate = history.deleteOne({_id: mongodb.ObjectID(lastGame._id)})
+
+		await Promise.all([
+			winnerUpdates,
+			loserUpdates,
+			historyUpdate,
+		])
+
+		return {
+			message: 'game was rolled back',
+			deltaElo: lastGame.deltaElo,
+			winners: winnerDocs.map(doc => ({ name: doc.name, elo: (doc.elo + lastGame.deltaElo)})),
+			losers:  loserDocs.map(doc => ({ name: doc.name, elo: (doc.elo - lastGame.deltaElo)})),
+		}
 	}
 }
 

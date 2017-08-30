@@ -1,3 +1,4 @@
+const mongodb = require('mongodb')
 const api = require('../src/api')
 const getDb = require('../src/get-db')
 const getPlayers = getDb.then(db => db.collection('players'))
@@ -89,8 +90,8 @@ describe('api.js', function() {
 		beforeEach(async function() {
 			const players = await getPlayers
 			await players.insertMany([
-				{ name: 'alice', elo: 1000 },
-				{ name: 'bob', elo: 900 },
+				{ name: 'alice', elo: 1000, wins: 5 },
+				{ name: 'bob', elo: 900, loses: 3 },
 				{ name: 'charlie', elo: 1100 },
 			])
 			await api.resolveGame({ winner: 'alice', loser: 'bob' })
@@ -111,7 +112,7 @@ describe('api.js', function() {
 
 			expect(alice)
 				.to.have.property('wins')
-				.to.equal(1)
+				.to.equal(6)
 		})
 
 		it('should update the winner with an activity timestamp', async function() {
@@ -138,7 +139,7 @@ describe('api.js', function() {
 
 			expect(bob)
 				.to.have.property('loses')
-				.to.equal(1)
+				.to.equal(4)
 		})
 
 		it('should update the loser with an activity timestamp', async function() {
@@ -153,6 +154,7 @@ describe('api.js', function() {
 		it('should update the history with a new game', async function() {
 			const history = await getHistory
 			const historyDocs = await history.find().toArray()
+
 			expect(historyDocs)
 				.to.have.length(1)
 			expect(historyDocs[0])
@@ -163,4 +165,61 @@ describe('api.js', function() {
 				.to.deep.equal(['bob'])
 		})
 	})
+	
+	describe('Calling undoLastGame()', function() {
+		beforeEach(async function() {
+			const players = await getPlayers
+			const history = await getHistory
+			await players.insertMany([
+				{ name: 'alice', elo: 1000, wins: 5 },
+				{ name: 'bob', elo: 900, loses: 3 },
+				{ name: 'charlie', elo: 1100 },
+			])
+
+			await api.resolveGame({ winner: 'alice', loser: 'bob' })
+			this.aliceAfterFirst = await players.findOne({name: 'alice'})
+			this.bobAfterFirst = await players.findOne({name: 'bob'})
+			this.firstGame = await history.findOne({},{sort: {time: -1}})
+			
+			await api.resolveGame({ winner: 'alice', loser: 'bob' })
+			this.lastGame = await history.findOne({},{sort: {time: -1}})
+
+			await api.undoLastGame()
+		})
+
+		it('should reset the elo of the participants to what it was before the game', async function() {
+			const players = await getPlayers
+			const alice = await players.findOne({ name: 'alice'})
+			const bob = await players.findOne({ name: 'bob'})
+
+			expect(alice)
+				.to.have.property('elo')
+				.to.be.equal(this.aliceAfterFirst.elo)
+			expect(bob)
+				.to.have.property('elo')
+				.to.be.equal(this.bobAfterFirst.elo)
+		})
+
+		it('should reset wins and loses of the participants to what it was before the game', async function() {
+			const players = await getPlayers
+			const alice = await players.findOne({ name: 'alice'})
+			const bob = await players.findOne({ name: 'bob'})
+
+			expect(alice)
+				.to.have.property('wins')
+				.to.be.equal(6)
+			expect(bob)
+				.to.have.property('loses')
+				.to.be.equal(4)
+		})
+
+		it('should remove the last game from history', async function() {
+			const history = await getHistory
+			const lastGame = await history.findOne({_id: mongodb.ObjectId(this.lastGame._id)})
+
+			expect(lastGame)
+				.to.be.null
+		})
+	})
 })
+	
