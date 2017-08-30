@@ -1,6 +1,6 @@
 {
   "name": "foosball-rankings",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "",
   "engines": {
     "node": "8.4.0^"
