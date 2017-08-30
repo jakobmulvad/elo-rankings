@@ -4,8 +4,8 @@ const getPlayers = getDb.then(db => db.collection('players'))
 const getHistory = getDb.then(db => db.collection('history'))
 
 describe('api.js', function() {
-	beforeEach(function() {
-		return Promise.all([
+	beforeEach(async function() {
+		await Promise.all([
 			getPlayers.then(players => players.deleteMany()),
 			getHistory.then(history => history.deleteMany()),
 		])
@@ -13,54 +13,60 @@ describe('api.js', function() {
 
 	describe('Calling newPlayer()', function() {
 		describe('with a name and a starting elo rating', function() {
-			beforeEach(function() {
-				return api.newPlayer({
+			beforeEach(async function() {
+				await api.newPlayer({
 					name: 'alice',
 					elo: 1234,
 				})
 			})
 
-			it('should create a new document in the players collection with the correct name and elo', function(done) {
-				getPlayers.then(players => players.find().toArray())
-				.then(players => {
-					expect(players).to.have.length(1)
-					expect(players[0]).to.have.property('name', 'alice')
-					expect(players[0]).to.have.property('elo', 1234)
-				})
-				.then(done,done)
+			it('should create a new document in the players collection with the correct name and elo', async function() {
+				const players = await getPlayers
+				const playerDocs = await players.find().toArray()
+
+				expect(playerDocs).to.have.length(1)
+				expect(playerDocs[0]).to.have.property('name', 'alice')
+				expect(playerDocs[0]).to.have.property('elo', 1234)
+			})
+
+			it('should fail if you try to create a player with a name that already exists', async function() {
+				const players = await getPlayers
+				try {
+					await api.newPlayer({ name: 'alice'})
+				} catch (e) {
+					return
+				}
+				throw new Error('Second api call did not fail')
 			})
 		})
 
 		describe('with only a name', function() {
-			beforeEach(function() {
-				return api.newPlayer({
+			beforeEach(async function() {
+				await api.newPlayer({
 					name: 'alice',
 				})
 			})
 
-			it('should create a new document in the players collection with the correct name and a default elo', function(done) {
-				getPlayers.then(players => players.find().toArray())
-				.then(players => {
-					expect(players).to.have.length(1)
-					expect(players[0]).to.have.property('name', 'alice')
-					expect(players[0]).to.have.property('elo')
-				})
-				.then(done,done)
+			it('should create a new document in the players collection with the correct name and a default elo', async function() {
+				const players = await getPlayers
+				const playerDocs = await players.find().toArray()
+
+				expect(playerDocs).to.have.length(1)
+				expect(playerDocs[0]).to.have.property('name', 'alice')
+				expect(playerDocs[0]).to.have.property('elo')
 			})
 		})
 	});
 
 	describe('Calling getRankings()', function() {
-		beforeEach(function() {
-			return getPlayers.then(players => {
-				return players.insertMany([
-					{ name: 'alice', elo: 1000 },
-					{ name: 'bob', elo: 900 },
-					{ name: 'charlie', elo: 1100 },
-				])
-			})
-			.then(() => api.getRankings())
-			.then(rankings => this.rankings = rankings)
+		beforeEach(async function() {
+			const players = await getPlayers
+			await players.insertMany([
+				{ name: 'alice', elo: 1000 },
+				{ name: 'bob', elo: 900 },
+				{ name: 'charlie', elo: 1100 },
+			])
+			this.rankings = await api.getRankings()
 		})
 
 		it('should return a list that includes all players', function() {
@@ -80,92 +86,81 @@ describe('api.js', function() {
 	})
 
 	describe('Calling resolveGame()', function() {
-		beforeEach(function() {
-			return getPlayers.then(players => {
-				return players.insertMany([
-					{ name: 'alice', elo: 1000 },
-					{ name: 'bob', elo: 900 },
-					{ name: 'charlie', elo: 1100 },
-				])
-			})
-			.then(() => api.resolveGame({ winner: 'alice', loser: 'bob' }))
+		beforeEach(async function() {
+			const players = await getPlayers
+			await players.insertMany([
+				{ name: 'alice', elo: 1000 },
+				{ name: 'bob', elo: 900 },
+				{ name: 'charlie', elo: 1100 },
+			])
+			await api.resolveGame({ winner: 'alice', loser: 'bob' })
 		})
 
-		it('should update the winner with higher elo', function() {
-			return getPlayers
-			.then(players => players.findOne({ name: 'alice'}))
-			.then(alice => {
-				expect(alice)
+		it('should update the winner with higher elo', async function() {
+			const players = await getPlayers
+			const alice = await players.findOne({ name: 'alice'})
+
+			expect(alice)
 				.to.have.property('elo')
 				.to.be.above(1000)
-			})
 		})
 
-		it('should update the winner with a win', function() {
-			return getPlayers
-			.then(players => players.findOne({ name: 'alice'}))
-			.then(alice => {
-				expect(alice)
+		it('should update the winner with a win', async function() {
+			const players = await getPlayers
+			const alice = await players.findOne({ name: 'alice'})
+
+			expect(alice)
 				.to.have.property('wins')
 				.to.equal(1)
-			})
 		})
 
-		it('should update the winner with an activity timestamp', function() {
-			return getPlayers
-			.then(players => players.findOne({ name: 'alice'}))
-			.then(alice => {
-				expect(alice)
+		it('should update the winner with an activity timestamp', async function() {
+			const players = await getPlayers
+			const alice = await players.findOne({ name: 'alice'})
+
+			expect(alice)
 				.to.have.property('lastActivity')
-				expect(Date.now() - alice.lastActivity.getTime())
-				.to.be.below(1000)
-			})
-		})
+				.to.be.above(Date.now() - 100)
+	  })
 
-		it('should update the loser with lower elo', function() {
-			return getPlayers
-			.then(players => players.findOne({ name: 'bob'}))
-			.then(bob => {
-				expect(bob)
+		it('should update the loser with lower elo', async function() {
+			const players = await getPlayers
+			const bob = await players.findOne({ name: 'bob'})
+
+			expect(bob)
 				.to.have.property('elo')
 				.to.be.below(900)
-			})
 		})
 
-		it('should update the loser with a loss', function() {
-			return getPlayers
-			.then(players => players.findOne({ name: 'bob'}))
-			.then(bob => {
-				expect(bob)
+		it('should update the loser with a loss', async function() {
+			const players = await getPlayers
+			const bob = await players.findOne({ name: 'bob'})
+
+			expect(bob)
 				.to.have.property('loses')
 				.to.equal(1)
-			})
 		})
 
-		it('should update the loser with an activity timestamp', function() {
-			return getPlayers
-			.then(players => players.findOne({ name: 'bob'}))
-			.then(bob => {
-				expect(bob)
-				.to.have.property('lastActivity')
-				expect(Date.now() - bob.lastActivity.getTime())
-				.to.be.below(1000)
-			})
+		it('should update the loser with an activity timestamp', async function() {
+			const players = await getPlayers
+			const bob = await players.findOne({ name: 'bob'})
+
+			expect(bob)
+			  .to.have.property('lastActivity')
+			  .to.be.above(Date.now() - 100)
 		})
 
-		it('should update the history with a new game', function() {
-			return getHistory
-			.then(historyCollection => historyCollection.find().toArray())
-			.then(history => {
-				expect(history)
+		it('should update the history with a new game', async function() {
+			const history = await getHistory
+			const historyDocs = await history.find().toArray()
+			expect(historyDocs)
 				.to.have.length(1)
-				expect(history[0])
+			expect(historyDocs[0])
 				.to.have.property('winners')
 				.to.deep.equal(['alice'])
-				expect(history[0])
+			expect(historyDocs[0])
 				.to.have.property('losers')
 				.to.deep.equal(['bob'])
-			})
 		})
 	})
 })
