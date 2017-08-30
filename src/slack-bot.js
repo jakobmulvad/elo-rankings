@@ -30,7 +30,7 @@ const commands = {
 					name: args[0]
 				})
 				sendMessage('Player created\n```' + JSON.stringify(name) + '```');
-			} catch(e) {
+			} catch (err) {
 				sendMessage('Failed to create player\n```' + JSON.stringify(err) + '```')
 			}
 		}
@@ -48,7 +48,7 @@ const commands = {
 				const heading = 'The rankings as of ' + new Date().toJSON() + ':\n'
 				rankings = rankings.map(rank => rank.name + '.'.repeat(11 - (rank.name + rank.elo).length) + rank.elo)
 				sendMessage(heading + '```' + rankings.join('\n') + '```', channel)
-			} catch(e) {
+			} catch (err) {
 				sendMessage('Failed to get rankings\n```' + JSON.stringify(err) + '```')
 			}
 		}
@@ -81,7 +81,19 @@ const commands = {
 				console.error(err.stack || err.message || err)
 			})
 		}
-	}
+	},
+	'whoops': {
+		description: 'Rolls back the results from the last game and removes it from history',
+		usage: '!whoops',
+		handler: async (sendMessage, args) => {
+			try {
+				const undone = await api.undoLastGame()				
+				sendMessage('Game was rolled back\n```' + JSON.stringify(undone) + '```')
+			} catch (err) {
+				sendMessage('Failed to revert game\n```' + JSON.stringify(err) + '```')
+			}
+		},
+	},
 }
 
 module.exports = function(apiToken) {
