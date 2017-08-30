@@ -121,7 +121,7 @@ describe('api.js', function() {
 
 			expect(alice)
 				.to.have.property('lastActivity')
-				.to.be.above(Date.now() - 100)
+				.to.be.above(Date.now() - 500)
 	  })
 
 		it('should update the loser with lower elo', async function() {
@@ -148,7 +148,7 @@ describe('api.js', function() {
 
 			expect(bob)
 			  .to.have.property('lastActivity')
-			  .to.be.above(Date.now() - 100)
+			  .to.be.above(Date.now() - 500)
 		})
 
 		it('should update the history with a new game', async function() {
