@@ -40,15 +40,16 @@ const commands = {
 		usage: '!rank [all]',
 		handler: async (sendMessage, args) => {
 			try {
-				const rankings = await api.getRankings()				
+				let rankings = await api.getRankings()				
 				if (!args.length || args[0] !== 'all') {
 					rankings = rankings.filter(ranking => ranking.lastActivity && Date.now() - ranking.lastActivity.getTime() < ONE_MONTH)
 				}
 	
 				const heading = 'The rankings as of ' + new Date().toJSON() + ':\n'
 				rankings = rankings.map(rank => rank.name + '.'.repeat(11 - (rank.name + rank.elo).length) + rank.elo)
-				sendMessage(heading + '```' + rankings.join('\n') + '```', channel)
+				sendMessage(heading + '```' + rankings.join('\n') + '```')
 			} catch (err) {
+				console.log(err.stack)
 				sendMessage('Failed to get rankings\n```' + JSON.stringify(err) + '```')
 			}
 		}

@@ -3,3 +3,5 @@ node_js:
   - "node"
 deploy:
   provider: azure_web_apps
+notifications:
+  email: false
