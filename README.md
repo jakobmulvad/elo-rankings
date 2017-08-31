@@ -1,20 +1,22 @@
-[![Build Status](https://travis-ci.org/jakobmulvad/foosball-rankings.svg?branch=master)](https://travis-ci.org/jakobmulvad/foosball-rankings)
+[![Build Status](https://travis-ci.org/jakobmulvad/elo-rankings.svg?branch=master)](https://travis-ci.org/jakobmulvad/elo-rankings)
 # elo-rankings
 
-A simple service i wrote to keep track of the ELO rating of foosball players at work but it can be used for any type of game. It has a web api and a slack bot interface.
+A simple service I wrote to keep track of the ELO rating of foosball players at work, but it can be used to create a league for any type of game. It has a web api and a slack bot interface.
 
 ELO is a system used mostly in chess and video games to rate the skill level of players. Read more about ELO rating here: https://en.wikipedia.org/wiki/Elo_rating_system
 
-### Run the server
+## Run the server
 
-Install dependencies with `npm install` then start the server with `npm start`. Requires node 8 (it uses async/await).
+Requires node 8 or higher.
 
-### Todo list
+Install dependencies with `npm install` then start the server with `npm start`. 
+
+## Todo list
 - Generate graphs and expose them through http and slack
 
 ## Slack bot integration
 
-Specify your slack API token and channel in `config.json`. 
+You can interact with the service through slack if you specify your slack API token and channel in `config.json`. 
 
 ## Web API
 
