@@ -205,8 +205,8 @@ const api = {
 		return {
 			message: 'game was rolled back',
 			deltaElo: lastGame.deltaElo,
-			winners: winnerDocs.map(doc => ({ name: doc.name, elo: (doc.elo + lastGame.deltaElo)})),
-			losers:  loserDocs.map(doc => ({ name: doc.name, elo: (doc.elo - lastGame.deltaElo)})),
+			winners: winnerDocs.map(doc => ({ name: doc.name, elo: (doc.elo - lastGame.deltaElo)})),
+			losers:  loserDocs.map(doc => ({ name: doc.name, elo: (doc.elo + lastGame.deltaElo)})),
 		}
 	}
 }
