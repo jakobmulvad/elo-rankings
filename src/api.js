@@ -237,9 +237,20 @@ const api = {
 		})
 		upsets.sort((a,b) => a.probability - b.probability)
 
+		const eloEntries = allHistory.reduce((acc, doc) => {
+			return acc.concat(doc.players.map(player => ({
+				name: player.name,
+				elo: player.elo,
+				time: doc.time,
+			})))
+		}, [])
+		eloEntries.sort((a,b) => b.elo - a.elo)
+
 		return {
 			gamesPlayed: allHistory.length,
-			biggestUpset: upsets[0]
+			biggestUpset: upsets[0],
+			highestElo: eloEntries[0],
+			lowestElo: eloEntries[eloEntries.length-1],
 		}
 	},
 }

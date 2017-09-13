@@ -260,6 +260,20 @@ describe('api.js', function() {
 				.to.have.property('name')
 				.to.equal('alice')
 		})
+
+		it('should return the highest ever elo', async function() {
+			expect(this.stats)
+				.to.have.property('highestElo')
+				.to.have.property('name')
+				.to.equal('alice')
+		})
+
+		it('should return the lowest ever elo', async function() {
+			expect(this.stats)
+				.to.have.property('lowestElo')
+				.to.have.property('name')
+				.to.equal('bob')
+		})
 	})
 })
 	

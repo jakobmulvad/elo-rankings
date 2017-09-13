@@ -7,6 +7,10 @@ const package = require('../package')
 const config = require('./config')
 const ONE_MONTH = 1000 * 60 * 60 * 24 * 30
 
+function formatDate(date) {
+	return `${date.toJSON().slice(0,10)} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`
+}
+
 const commands = {
 	'help': {
 		description: 'Gets the list of available commands',
@@ -45,7 +49,7 @@ const commands = {
 					rankings = rankings.filter(ranking => ranking.lastActivity && Date.now() - ranking.lastActivity.getTime() < ONE_MONTH)
 				}
 	
-				const heading = 'The rankings as of ' + new Date().toJSON() + ':\n'
+				const heading = 'The rankings as of ' + formatDate(new Date()) + ':\n'
 				rankings = rankings.map(rank => rank.name + '.'.repeat(11 - (rank.name + rank.elo).length) + rank.elo)
 				sendMessage(heading + '```' + rankings.join('\n') + '```')
 			} catch (err) {
@@ -102,15 +106,20 @@ const commands = {
 			if (args.length === 0) {
 				try {
 					const stats = await api.stats()
-					const buWinners = stats.biggestUpset.winners.map(winner => `${winner.name} (${winner.elo})`)
-					const buLosers = stats.biggestUpset.losers.map(loser => `${loser.name} (${loser.elo})`)
+					const { gamesPlayed, highestElo, lowestElo, biggestUpset } = stats
+
+					const buWinners = biggestUpset.winners.map(winner => `${winner.name} (${winner.elo})`)
+					const buLosers = biggestUpset.losers.map(loser => `${loser.name} (${loser.elo})`)
 					const lines = [
-						`Games played: ${stats.gamesPlayed}`,
-						`Biggest upset: ${buWinners.join(',')} won against ${buLosers.join(',')} on ${stats.biggestUpset.time.toJSON().slice(0,10)} (probability: ${(stats.biggestUpset.probability * 100).toFixed(1)}%)`,
+						`Games played: ${gamesPlayed}`,
+						`Highest ELO achieved: :trophy:${highestElo.name} achieved ELO ${highestElo.elo} on ${formatDate(highestElo.time)}`,
+						`Lowest ELO achieved: :poop:${lowestElo.name} reached ELO ${lowestElo.elo} on ${formatDate(lowestElo.time)}`,
+						`Biggest upset: ${buWinners.join(',')} won against ${buLosers.join(',')} on ${formatDate(biggestUpset.time)} (probability: ${(stats.biggestUpset.probability * 100).toFixed(1)}%)`,
 					]
 					sendMessage(lines.join('\n'))
 				} catch(err) {
 					sendMessage('Failed to retreive stats')
+					console.error(err.stack || err.message || err)
 				}
 			}
 		}
@@ -138,7 +147,6 @@ module.exports = function(apiToken) {
 			}
 
 			console.log('Executing command from slack:', commandText)
-
 			const channel = rtm.dataStore.getChannelByName(config.slackChannel).id
 			return command.handler(text => rtm.sendMessage(text, channel), commandArgs.slice(1))
 		}
