@@ -148,10 +148,14 @@ module.exports = function(apiToken) {
 		console.log('Slack authenticated')
 	})
 
+	let welcome = true
 	rtm.on(RTM_CLIENT_EVENTS.RTM_CONNECTION_OPENED, function () {
 		console.log('Slack connected')
 		const channel = rtm.dataStore.getChannelByName(config.slackChannel).id
-		rtm.sendMessage('Foosball Rankings v' + package.version + ' online', channel)
+		if (welcome) {
+			rtm.sendMessage('Elo Rankings v' + package.version + ' online', channel)
+			welcome = false
+		}
 	})
 
 	console.log('Connecting slackbot...')

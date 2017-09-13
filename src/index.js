@@ -12,4 +12,4 @@ app.listen(port, () => {
 	console.log('Listening on', port)
 })
 
-console.log('Foosball ranking server %s', package.version)
+console.log('Elo ranking server %s', package.version)
