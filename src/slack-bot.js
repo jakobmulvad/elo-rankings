@@ -73,7 +73,7 @@ const commands = {
 					'Game was resolved',
 					`Winner: :trophy:${res.winner.name} ${res.winner.elo} (+${res.deltaElo})`,
 					`Loser: :poop:${res.loser.name} ${res.loser.elo} (-${res.deltaElo})`,
-					`Probability: ${Math.round(res.probability * 100)}%`
+					`Probability: ${(res.probability * 100).toFixed(1)}%`
 				]
 				sendMessage(lines.join('\n'))
 			})
@@ -95,6 +95,26 @@ const commands = {
 			}
 		},
 	},
+	'stats': {
+		description: 'Rolls back the results from the last game and removes it from history',
+		usage: '!stats',
+		handler: async (sendMessage, args) => {
+			if (args.length === 0) {
+				try {
+					const stats = await api.stats()
+					const buWinners = stats.biggestUpset.winners.map(winner => `${winner.name} (${winner.elo})`)
+					const buLosers = stats.biggestUpset.losers.map(loser => `${loser.name} (${loser.elo})`)
+					const lines = [
+						`Games played: ${stats.gamesPlayed}`,
+						`Biggest upset: ${buWinners.join(',')} won against ${buLosers.join(',')} on ${stats.biggestUpset.time.toJSON().slice(0,10)} (probability: ${(stats.biggestUpset.probability * 100).toFixed(1)}%)`,
+					]
+					sendMessage(lines.join('\n'))
+				} catch(err) {
+					sendMessage('Failed to retreive stats')
+				}
+			}
+		}
+	}
 }
 
 module.exports = function(apiToken) {

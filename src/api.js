@@ -8,6 +8,11 @@ async function getCollection(collection) {
 	return db.collection(collection)
 }
 
+function getAverageElo(docs) {
+	const eloSum = docs.reduce((elo, doc) => elo + doc.elo, 0)
+	return Math.round(eloSum / docs.length)
+}
+
 const api = {
 	getRankings: async function() {
 		const players = await getCollection('players')
@@ -118,11 +123,8 @@ const api = {
 		const loserDocs = query.losers
 			.map(name => playerDocs.find(doc => doc.name === name))
 
-		const winnersElo = Math.round(winnerDocs
-			.reduce((elo, doc) => (elo + doc.elo), 0) / winnerDocs.length)
-
-		const losersElo = Math.round(loserDocs
-			.reduce((elo, doc) => (elo + doc.elo), 0) / loserDocs.length)
+		const winnersElo = getAverageElo(winnerDocs)
+		const losersElo = getAverageElo(loserDocs)
 
 		const delta = Math.round(elo(winnersElo, losersElo) / winnerDocs.length)
 		const date = new Date()
@@ -208,7 +210,38 @@ const api = {
 			winners: winnerDocs.map(doc => ({ name: doc.name, elo: (doc.elo - lastGame.deltaElo)})),
 			losers:  loserDocs.map(doc => ({ name: doc.name, elo: (doc.elo + lastGame.deltaElo)})),
 		}
-	}
+	},
+
+	stats: async function() {
+		const history = await getCollection('history')
+		const allHistory = await history.find().toArray()
+
+		if (allHistory.length === 0) {
+			return {
+				gamesPlayed: 0
+			}
+		}
+
+		const upsets = allHistory.map(doc => {
+			const winners = doc.winners.map(name => doc.players.find(p => p.name === name))
+			const losers = doc.losers.map(name => doc.players.find(p => p.name === name))
+			const winnersElo = getAverageElo(winners)
+			const losersElo = getAverageElo(losers)
+			return {
+				winners,
+				losers,
+				eloDifference: losersElo - winnersElo,
+				probability: 1-elo(winnersElo, losersElo, 1),
+				time: doc.time
+			}
+		})
+		upsets.sort((a,b) => a.probability - b.probability)
+
+		return {
+			gamesPlayed: allHistory.length,
+			biggestUpset: upsets[0]
+		}
+	},
 }
 
 module.exports = api;

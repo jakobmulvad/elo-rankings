@@ -221,5 +221,45 @@ describe('api.js', function() {
 				.to.be.null
 		})
 	})
+
+	describe('Calling stats()', function() {
+		beforeEach(async function() {
+			const players = await getPlayers
+			const history = await getHistory
+			await api.newPlayer({name: 'alice'})
+			await api.newPlayer({name: 'bob'})
+			await api.newPlayer({name: 'charlie'})
+
+			await api.resolveGame({ winner: 'alice', loser: 'bob' })
+			await api.resolveGame({ winner: 'alice', loser: 'bob' })
+			await api.resolveGame({ winner: 'alice', loser: 'charlie' })
+			await api.resolveGame({ winner: 'bob', loser: 'alice' })
+			this.stats = await api.stats()
+		})
+
+		it('should return the total number of games playes', async function() {
+			expect(this.stats)
+				.to.have.property('gamesPlayed')
+				.to.equal(4)
+		})
+
+		it('should return the biggest upset with the correct winner', async function() {
+			expect(this.stats)
+				.to.have.property('biggestUpset')
+				.to.have.property('winners')
+				.to.have.property('0')
+				.to.have.property('name')
+				.to.equal('bob')
+		})
+
+		it('should return the biggest upset with the correct loser', async function() {
+			expect(this.stats)
+				.to.have.property('biggestUpset')
+				.to.have.property('losers')
+				.to.have.property('0')
+				.to.have.property('name')
+				.to.equal('alice')
+		})
+	})
 })
 	
