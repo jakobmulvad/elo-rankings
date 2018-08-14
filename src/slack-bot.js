@@ -50,7 +50,10 @@ const commands = {
 				}
 
 				const heading = 'The rankings as of ' + formatDate(new Date()) + ':\n'
-				rankings = rankings.map(rank => rank.name + '.'.repeat(Math.max(0, 11 - (rank.name + rank.elo))).length + rank.elo)
+				rankings = rankings.map(rank => {
+					const nameEloLength = (rank.name + rank.elo).length
+					return rank.name + '.'.repeat(Math.max(1, 11 - nameEloLength) + rank.elo
+				})
 				sendMessage(heading + '```' + rankings.join('\n') + '```')
 			} catch (err) {
 				sendMessage('Failed to get rankings\n```' + err.message + '```')
