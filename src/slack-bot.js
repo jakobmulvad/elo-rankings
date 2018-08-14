@@ -50,7 +50,7 @@ const commands = {
 				}
 
 				const heading = 'The rankings as of ' + formatDate(new Date()) + ':\n'
-				rankings = rankings.map(rank => rank.name + '.'.repeat(Math.max(0, 11 - (rank.name + rank.elo)).length) + rank.elo)
+				rankings = rankings.map(rank => rank.name + '.'.repeat(Math.max(0, 11 - (rank.name + rank.elo))).length + rank.elo)
 				sendMessage(heading + '```' + rankings.join('\n') + '```')
 			} catch (err) {
 				console.log(err.stack)
