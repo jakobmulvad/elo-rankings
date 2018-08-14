@@ -1,6 +1,6 @@
 {
   "name": "elo-rankings",
-  "version": "3.5.1",
+  "version": "3.5.2",
   "description": "",
   "engines": {
     "node": "^8.4.0"
