@@ -52,7 +52,7 @@ const commands = {
 				const heading = 'The rankings as of ' + formatDate(new Date()) + ':\n'
 				rankings = rankings.map(rank => {
 					const nameEloLength = (rank.name + rank.elo).length
-					return rank.name + '.'.repeat(Math.max(1, 11 - nameEloLength) + rank.elo
+					return rank.name + '.'.repeat(Math.max(1, 11 - nameEloLength)) + rank.elo
 				})
 				sendMessage(heading + '```' + rankings.join('\n') + '```')
 			} catch (err) {
