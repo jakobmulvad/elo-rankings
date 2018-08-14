@@ -35,7 +35,7 @@ const commands = {
 				})
 				sendMessage('Player created\n```' + JSON.stringify(name) + '```');
 			} catch (err) {
-				sendMessage('Failed to create player\n```' + JSON.stringify(err) + '```')
+				sendMessage('Failed to create player\n```' + err.message + '```')
 			}
 		}
 	},
@@ -53,8 +53,8 @@ const commands = {
 				rankings = rankings.map(rank => rank.name + '.'.repeat(Math.max(0, 11 - (rank.name + rank.elo))).length + rank.elo)
 				sendMessage(heading + '```' + rankings.join('\n') + '```')
 			} catch (err) {
-				console.log(err.stack)
-				sendMessage('Failed to get rankings\n```' + JSON.stringify(err) + '```')
+				sendMessage('Failed to get rankings\n```' + err.message + '```')
+				console.error(err.stack || err.message || err)
 			}
 		}
 	},
@@ -82,7 +82,7 @@ const commands = {
 				sendMessage(lines.join('\n'))
 			})
 			.catch(err => {
-				sendMessage('Failed to resolve game\n```' + JSON.stringify(err) + '```')
+				sendMessage('Failed to resolve game\n```' + err.message + '```')
 				console.error(err.stack || err.message || err)
 			})
 		}
@@ -95,7 +95,8 @@ const commands = {
 				const undone = await api.undoLastGame()
 				sendMessage('Game was rolled back\n```' + JSON.stringify(undone) + '```')
 			} catch (err) {
-				sendMessage('Failed to revert game\n```' + JSON.stringify(err) + '```')
+				sendMessage('Failed to revert game\n```' + err.message + '```')
+				console.error(err.stack || err.message || err)
 			}
 		},
 	},
@@ -118,7 +119,7 @@ const commands = {
 					]
 					sendMessage(lines.join('\n'))
 				} catch(err) {
-					sendMessage('Failed to retreive stats')
+					sendMessage('Failed to retreive stats\n```' + err.message + '```')
 					console.error(err.stack || err.message || err)
 				}
 			}
