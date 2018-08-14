@@ -44,13 +44,13 @@ const commands = {
 		usage: '!rank [all]',
 		handler: async (sendMessage, args) => {
 			try {
-				let rankings = await api.getRankings()				
+				let rankings = await api.getRankings()
 				if (!args.length || args[0] !== 'all') {
 					rankings = rankings.filter(ranking => ranking.lastActivity && Date.now() - ranking.lastActivity.getTime() < ONE_MONTH)
 				}
-	
+
 				const heading = 'The rankings as of ' + formatDate(new Date()) + ':\n'
-				rankings = rankings.map(rank => rank.name + '.'.repeat(11 - (rank.name + rank.elo).length) + rank.elo)
+				rankings = rankings.map(rank => rank.name + '.'.repeat(Math.max(0, 11 - (rank.name + rank.elo)).length) + rank.elo)
 				sendMessage(heading + '```' + rankings.join('\n') + '```')
 			} catch (err) {
 				console.log(err.stack)
@@ -92,7 +92,7 @@ const commands = {
 		usage: '!whoops',
 		handler: async (sendMessage, args) => {
 			try {
-				const undone = await api.undoLastGame()				
+				const undone = await api.undoLastGame()
 				sendMessage('Game was rolled back\n```' + JSON.stringify(undone) + '```')
 			} catch (err) {
 				sendMessage('Failed to revert game\n```' + JSON.stringify(err) + '```')
@@ -100,7 +100,7 @@ const commands = {
 		},
 	},
 	'stats': {
-		description: 'Rolls back the results from the last game and removes it from history',
+		description: 'Displayes various stats',
 		usage: '!stats',
 		handler: async (sendMessage, args) => {
 			if (args.length === 0) {

@@ -113,7 +113,7 @@ const api = {
 		const playerNames = [].concat(query.winners).concat(query.losers)
 		const players = await getCollection('players')
 		const playerDocs = await players.find({ name: { $in: playerNames }}).toArray()
-		
+
 		if (playerDocs.length !== playerNames.length) {
 			throw new Error('one or more players could not be found')
 		}
