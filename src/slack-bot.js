@@ -116,8 +116,8 @@ const commands = {
 					const buLosers = biggestUpset.losers.map(loser => `${loser.name} (${loser.elo})`)
 					const lines = [
 						`Games played: ${gamesPlayed}`,
-						`Highest ELO achieved: :trophy:${highestElo.name} achieved ELO ${highestElo.elo} on ${formatDate(highestElo.time)}`,
-						`Lowest ELO achieved: :poop:${lowestElo.name} reached ELO ${lowestElo.elo} on ${formatDate(lowestElo.time)}`,
+						`Highest ELO achieved: :trophy:${highestElo.name} peaked at ${highestElo.elo} on ${formatDate(highestElo.time)}`,
+						`Lowest ELO achieved: :poop:${lowestElo.name} hit rock bottom at ${lowestElo.elo} on ${formatDate(lowestElo.time)}`,
 						`Biggest upset: ${buWinners.join(',')} won against ${buLosers.join(',')} on ${formatDate(biggestUpset.time)} (probability: ${(stats.biggestUpset.probability * 100).toFixed(1)}%)`,
 					]
 					sendMessage(lines.join('\n'))

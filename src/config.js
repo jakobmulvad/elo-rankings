@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const config = {
-	mongoUrl: process.env.MONGO_URI || 'mongodb://localhost:27017/foosball-rankings',
+	mongoUrl: process.env.MONGO_URI || 'mongodb://localhost:27017/elo-rankings',
 	slackApiToken: process.env.SLACK_API_TOKEN,
 	slackChannel: '#foosball',
 }

@@ -12,6 +12,10 @@ describe('api.js', function() {
 		])
 	})
 
+	after(async function() {
+		(await getDb).close()
+	})
+
 	describe('Calling newPlayer()', function() {
 		describe('with a name and a starting elo rating', function() {
 			beforeEach(async function() {
@@ -31,7 +35,6 @@ describe('api.js', function() {
 			})
 
 			it('should fail if you try to create a player with a name that already exists', async function() {
-				const players = await getPlayers
 				try {
 					await api.newPlayer({ name: 'alice'})
 				} catch (e) {
@@ -121,7 +124,7 @@ describe('api.js', function() {
 
 			expect(alice)
 				.to.have.property('lastActivity')
-				.to.be.above(Date.now() - 500)
+				.to.be.above(new Date(Date.now() - 500))
 	  })
 
 		it('should update the loser with lower elo', async function() {
@@ -148,7 +151,7 @@ describe('api.js', function() {
 
 			expect(bob)
 			  .to.have.property('lastActivity')
-			  .to.be.above(Date.now() - 500)
+			  .to.be.above(new Date(Date.now() - 500))
 		})
 
 		it('should update the history with a new game', async function() {
@@ -165,7 +168,7 @@ describe('api.js', function() {
 				.to.deep.equal(['bob'])
 		})
 	})
-	
+
 	describe('Calling undoLastGame()', function() {
 		beforeEach(async function() {
 			const players = await getPlayers
@@ -180,7 +183,7 @@ describe('api.js', function() {
 			this.aliceAfterFirst = await players.findOne({name: 'alice'})
 			this.bobAfterFirst = await players.findOne({name: 'bob'})
 			this.firstGame = await history.findOne({},{sort: {time: -1}})
-			
+
 			await api.resolveGame({ winner: 'alice', loser: 'bob' })
 			this.lastGame = await history.findOne({},{sort: {time: -1}})
 
@@ -276,4 +279,3 @@ describe('api.js', function() {
 		})
 	})
 })
-	

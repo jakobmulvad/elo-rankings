@@ -1,59 +1,52 @@
 const express = require('express')
-const bodyParser = require('body-parser')
-const package = require('../package')
 const api = require('./api')
-const slackBot = require('./slack-bot')
 
 const app = express()
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }));
 
-app.get('/', (req, res) => {
+app.get('/', (req, res, next) => {
 	api.getRankings()
 	.then(rankings => res.json(rankings))
-	.catch(handleError(res))
+	.catch(next)
 })
 
-app.get('/players/:playername', (req, res) => {
+app.get('/players/:playername', (req, res, next) => {
 	api.getPlayerProfile(req.params.playername)
 	.then(player => res.json(player))
-	.catch(handleError(res))
+	.catch(next)
 })
 
-app.post('/players', (req, res) => {
+app.post('/players', (req, res, next) => {
 	api.newPlayer(req.body)
 	.then(player => res.json({ message: 'player created' }))
-	.catch(handleError(res))
+	.catch(next)
 })
 
-app.post('/game', (req, res) => {
+app.post('/game', (req, res, next) => {
 	api.resolveGame(req.body)
 	.then(result => res.json(result))
-	.catch(handleError(res))
+	.catch(next)
 })
 
-app.post('/game/nvn', (req, res) => {
+app.post('/game/nvn', (req, res, next) => {
 	api.resolveGameNvN(req.body)
 	.then(result => res.json(result))
-	.catch(handleError(res))
+	.catch(next)
 })
 
-app.get('/history', (req, res) => {
+app.get('/history', (req, res, next) => {
 	api.getHistory()
 	.then(history => res.json(history))
-	.catch(handleError(res))
+	.catch(next)
 })
 
-function handleError(res) {
-	return function(err) {
+app.use((err, req, res, next) => {
+	if (err instanceof Error) {
 		console.error(err)
-
-		if (err instanceof Error) {
-			return res.status(500).json({ message: err.message, stack: err.stack })
-		}
-
-		return res.status(400).json(err)
-	} 
-}
+		return res.status(500).json({ message: err.message, stack: err.stack })
+	}
+	return res.status(400).json(err)
+})
 
 module.exports = app;
