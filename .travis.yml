@@ -5,3 +5,6 @@ deploy:
   provider: azure_web_apps
 notifications:
   email: false
+branches:
+  only:
+  - master
