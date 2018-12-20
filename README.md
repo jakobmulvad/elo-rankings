@@ -7,8 +7,6 @@ ELO is a system used mostly in chess and video games to rate the skill level of 
 
 ## Run the server
 
-Requires node 8 or higher.
-
 Install dependencies with `npm install` then start the server with `npm start`. 
 
 ## Todo list
@@ -16,7 +14,9 @@ Install dependencies with `npm install` then start the server with `npm start`.
 
 ## Slack bot integration
 
-You can interact with the service through slack if you specify your slack API token and channel in `config.json`. 
+You can interact with the service through slack if you specify your slack API token and channel in `config.json`. You can also specify them in the environment variables `SLACK_API_TOKEN` and `SLACK_API_CHANNEL` (the channel name needs to be without the # in front).
+
+The bot will list available commands if you write `!help` in the channel.
 
 ## Web API
 
