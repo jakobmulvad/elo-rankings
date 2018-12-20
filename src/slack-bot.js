@@ -1,7 +1,4 @@
-const RtmClient = require('@slack/client').RtmClient
-const MemoryDataStore = require('@slack/client').MemoryDataStore;
-const RTM_CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS.RTM
-const RTM_EVENTS = require('@slack/client').RTM_EVENTS
+const { RTMClient, WebClient } = require('@slack/client')
 const api = require('./api')
 const package = require('../package')
 const config = require('./config')
@@ -30,9 +27,7 @@ const commands = {
 			}
 
 			try {
-				const player = await api.newPlayer({
-					name: args[0]
-				})
+				await api.newPlayer({name: args[0]})
 				sendMessage('Player created\n```' + JSON.stringify(name) + '```');
 			} catch (err) {
 				sendMessage('Failed to create player\n```' + err.message + '```')
@@ -130,14 +125,17 @@ const commands = {
 	}
 }
 
-module.exports = function(apiToken) {
-	const rtm = new RtmClient(apiToken, {
-		logLevel: 'error',
-		dataStore: new MemoryDataStore(),
-	})
+module.exports = async function(apiToken) {
+	const web = new WebClient(token)
+	const res = await web.channels.list()
+	const channels = res.channels
+	const botChannel = channels.find(c => c.name === config.slackChannel)
+	if (!botChannel) {
+		throw new Error('Cannot find slack channel')
+	}
 
-	rtm.start()
-	rtm.on(RTM_EVENTS.MESSAGE, function(message) {
+	const rtm = new RTMClient(apiToken)
+	rtm.on('message', function(message) {
 		if (!message.text) {
 			return
 		}
@@ -151,24 +149,20 @@ module.exports = function(apiToken) {
 			}
 
 			console.log('Executing command from slack:', commandText)
-			const channel = rtm.dataStore.getChannelByName(config.slackChannel).id
-			return command.handler(text => rtm.sendMessage(text, channel), commandArgs.slice(1))
+			return command.handler(text => rtm.sendMessage(text, botChannel.id), commandArgs.slice(1))
 		}
-	})
-
-	rtm.on(RTM_CLIENT_EVENTS.AUTHENTICATED, function (rtmStartData) {
-		console.log('Slack authenticated')
 	})
 
 	let welcome = true
-	rtm.on(RTM_CLIENT_EVENTS.RTM_CONNECTION_OPENED, function () {
+	rtm.on('connected', function () {
 		console.log('Slack connected')
-		const channel = rtm.dataStore.getChannelByName(config.slackChannel).id
 		if (welcome) {
-			rtm.sendMessage('Elo Rankings v' + package.version + ' online', channel)
+			rtm.sendMessage('Elo Rankings v' + package.version + ' online', botChannel.id)
 			welcome = false
 		}
 	})
+	rtm.start()
+
 
 	console.log('Connecting slackbot...')
 }

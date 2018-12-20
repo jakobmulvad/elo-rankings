@@ -5,6 +5,7 @@ const config = require('./config')
 
 if (config.slackApiToken) {
 	slackBot(config.slackApiToken)
+	.catch(console.error)
 }
 
 const port = process.env.PORT || 3000
