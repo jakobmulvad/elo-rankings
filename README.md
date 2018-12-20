@@ -11,6 +11,7 @@ Install dependencies with `npm install` then start the server with `npm start`.
 
 ## Todo list
 - Generate graphs and expose them through http and slack
+- Introduce seasons
 
 ## Slack bot integration
 
