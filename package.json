@@ -14,7 +14,10 @@
   "author": "Jakob Mulvad Nielsen <mulvad@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "@slack/client": "^4.8.0",
+    "@slack/bolt": "^2.5.0",
+    "@slack/client": "^5.0.2",
+    "@slack/events-api": "^2.3.4",
+    "@slack/interactive-messages": "^1.7.0",
     "ajv": "^4.11.3",
     "elo-rank": "^1.0.0",
     "express": "^4.16.4",

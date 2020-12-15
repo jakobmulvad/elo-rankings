@@ -4,8 +4,8 @@ const package = require('../package')
 const config = require('./config')
 
 if (config.slackApiToken) {
-	slackBot(config.slackApiToken)
-	.catch(console.error)
+	slackBot.startEventListening(config.slackApiToken, config.slackSigningSecret)
+		.catch(console.error)
 }
 
 const port = process.env.PORT || 3000

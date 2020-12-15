@@ -1,5 +1,6 @@
 const express = require('express')
 const api = require('./api')
+const slackBot = require('./slack-bot')
 
 const app = express()
 app.use(express.json())
@@ -27,6 +28,22 @@ app.post('/game', (req, res, next) => {
 	api.resolveGame(req.body)
 	.then(result => res.json(result))
 	.catch(next)
+})
+
+//This api has been added to get the event requests
+app.post('/', (req, res, next) => {
+	res.setHeader('Content-Type', 'application/json');
+	//This situation will be if you want to set Event Url for slack app
+	if (!req.body.event) {
+		res.json({ challenge: req.body.challenge })
+	}
+	else {
+		const message = req.body.event.text;
+		const channel = req.body.event.channel;
+		console.log(message)
+		result = slackBot.eventOnMessage(message, channel)
+		res.json({ challenge: req.body.challenge, result: result })
+	}
 })
 
 app.post('/game/nvn', (req, res, next) => {

@@ -1,11 +1,16 @@
-const { RTMClient, WebClient } = require('@slack/client')
-const api = require('./api')
+const { WebClient } = require('@slack/client')
+const { createEventAdapter } = require('@slack/events-api');
+const { App } = require("@slack/bolt");
+const { getRankings, resolveGame, undoLastGame, newPlayer, stats } = require('./api')
 const package = require('../package')
 const config = require('./config')
 const ONE_MONTH = 1000 * 60 * 60 * 24 * 30
 
+const apiToken = config.slackApiToken;
+const signingSecret = config.slackSigningSecret;
+
 function formatDate(date) {
-	return `${date.toJSON().slice(0,10)} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`
+	return `${date.toJSON().slice(0, 10)} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 }
 
 const commands = {
@@ -27,8 +32,8 @@ const commands = {
 			}
 
 			try {
-				await api.newPlayer({name: args[0]})
-				sendMessage('Player created\n```' + JSON.stringify(name) + '```');
+				await newPlayer({ name: args[0] })
+				sendMessage('Player created\n```' + JSON.stringify(args[0]) + '```');
 			} catch (err) {
 				sendMessage('Failed to create player\n```' + err.message + '```')
 			}
@@ -39,7 +44,7 @@ const commands = {
 		usage: '!rank [all]',
 		handler: async (sendMessage, args) => {
 			try {
-				let rankings = await api.getRankings()
+				var rankings = await getRankings();
 				if (!args.length || args[0] !== 'all') {
 					rankings = rankings.filter(ranking => ranking.lastActivity && Date.now() - ranking.lastActivity.getTime() < ONE_MONTH)
 				}
@@ -65,24 +70,24 @@ const commands = {
 				return sendMessage('Incorrect number of arguments')
 			}
 
-			api.resolveGame({
+			resolveGame({
 				winner: args[0],
 				loser: args[1],
 			})
-			.then(res => {
-				delete res.message
-				const lines = [
-					'Game was resolved',
-					`Winner: :trophy:${res.winner.name} ${res.winner.elo} (+${res.deltaElo})`,
-					`Loser: :poop:${res.loser.name} ${res.loser.elo} (-${res.deltaElo})`,
-					`Probability: ${(res.probability * 100).toFixed(1)}%`
-				]
-				sendMessage(lines.join('\n'))
-			})
-			.catch(err => {
-				sendMessage('Failed to resolve game\n```' + err.message + '```')
-				console.error(err.stack || err.message || err)
-			})
+				.then(res => {
+					delete res.message
+					const lines = [
+						'Game was resolved',
+						`Winner: :trophy:${res.winner.name} ${res.winner.elo} (+${res.deltaElo})`,
+						`Loser: :poop:${res.loser.name} ${res.loser.elo} (-${res.deltaElo})`,
+						`Probability: ${(res.probability * 100).toFixed(1)}%`
+					]
+					sendMessage(lines.join('\n'))
+				})
+				.catch(err => {
+					sendMessage('Failed to resolve game\n```' + err.message + '```')
+					console.error(err.stack || err.message || err)
+				})
 		}
 	},
 	'whoops': {
@@ -90,7 +95,7 @@ const commands = {
 		usage: '!whoops',
 		handler: async (sendMessage, args) => {
 			try {
-				const undone = await api.undoLastGame()
+				const undone = await undoLastGame()
 				sendMessage('Game was rolled back\n```' + JSON.stringify(undone) + '```')
 			} catch (err) {
 				sendMessage('Failed to revert game\n```' + err.message + '```')
@@ -104,8 +109,8 @@ const commands = {
 		handler: async (sendMessage, args) => {
 			if (args.length === 0) {
 				try {
-					const stats = await api.stats()
-					const { gamesPlayed, highestElo, lowestElo, biggestUpset } = stats
+					const stats2 = await stats()
+					const { gamesPlayed, highestElo, lowestElo, biggestUpset } = stats2
 
 					const buWinners = biggestUpset.winners.map(winner => `${winner.name} (${winner.elo})`)
 					const buLosers = biggestUpset.losers.map(loser => `${loser.name} (${loser.elo})`)
@@ -113,10 +118,10 @@ const commands = {
 						`Games played: ${gamesPlayed}`,
 						`Highest ELO achieved: :trophy:${highestElo.name} peaked at ${highestElo.elo} on ${formatDate(highestElo.time)}`,
 						`Lowest ELO achieved: :poop:${lowestElo.name} hit rock bottom at ${lowestElo.elo} on ${formatDate(lowestElo.time)}`,
-						`Biggest upset: ${buWinners.join(',')} won against ${buLosers.join(',')} on ${formatDate(biggestUpset.time)} (probability: ${(stats.biggestUpset.probability * 100).toFixed(1)}%)`,
+						`Biggest upset: ${buWinners.join(',')} won against ${buLosers.join(',')} on ${formatDate(biggestUpset.time)} (probability: ${(stats2.biggestUpset.probability * 100).toFixed(1)}%)`,
 					]
 					sendMessage(lines.join('\n'))
-				} catch(err) {
+				} catch (err) {
 					sendMessage('Failed to retreive stats\n```' + err.message + '```')
 					console.error(err.stack || err.message || err)
 				}
@@ -125,44 +130,68 @@ const commands = {
 	}
 }
 
-module.exports = async function(apiToken) {
+const publishMessage = async (id, text) => {
+	try {
+		const app = new App({
+			token: apiToken,
+			signingSecret: signingSecret
+		});		// Call the chat.postMessage method using the built-in WebClient
+		const result = await app.client.chat.postMessage({
+			// The token you used to initialize your app
+			token: apiToken,
+			channel: id,
+			text: text
+			// You could also use a blocks[] array to send richer content
+		});
+
+		// Print result, which includes information about the message (like TS)
+		console.log(result);
+	}
+	catch (error) {
+		console.error(error);
+	}
+}
+
+const eventOnMessage = (message, channel) => {
+	if (!message) {
+		return false
+	}
+
+	if (message.startsWith('!')) {
+		const commandText = message.slice(1).toLowerCase()
+		const commandArgs = commandText.split(' ')
+		const command = commands[commandArgs[0]]
+		if (!command) {
+			return
+		}
+
+		console.log('Executing command from slack:', commandText)
+		console.log(channel)
+		return command.handler(text => publishMessage(channel, text), commandArgs.slice(1))
+	}
+}
+
+const startEventListening = async () => {
 	const web = new WebClient(apiToken)
-	const res = await web.channels.list()
+	const res = await web.conversations.list({ limit: 300 })
 	const channels = res.channels
 	const botChannel = channels.find(c => c.name === config.slackChannel)
 	if (!botChannel) {
 		throw new Error('Cannot find slack channel')
 	}
 
-	const rtm = new RTMClient(apiToken)
-	rtm.on('message', function(message) {
-		if (!message.text) {
-			return
-		}
+	// Initialize the adapter to trigger listeners with envelope data and headers
+	const slackEvents = createEventAdapter(signingSecret);
 
-		if (message.text.startsWith('!')) {
-			const commandText = message.text.slice(1).toLowerCase()
-			const commandArgs = commandText.split(' ')
-			const command = commands[commandArgs[0]]
-			if (!command) {
-				return
-			}
+	(async () => {
+		const server = await slackEvents.start();
+		console.log(`Listening for events on ${server.address().port}`);
+		publishMessage(botChannel.id, 'Elo Rankings v' + package.version + ' online - Date: ' +
+			new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''), apiToken)
+	})();
 
-			console.log('Executing command from slack:', commandText)
-			return command.handler(text => rtm.sendMessage(text, botChannel.id), commandArgs.slice(1))
-		}
-	})
-
-	let welcome = true
-	rtm.on('connected', function () {
-		console.log('Slack connected')
-		if (welcome) {
-			rtm.sendMessage('Elo Rankings v' + package.version + ' online', botChannel.id)
-			welcome = false
-		}
-	})
-	rtm.start()
-
-
-	console.log('Connecting slackbot...')
+}
+module.exports = {
+	startEventListening,
+	eventOnMessage
 }
