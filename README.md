@@ -17,6 +17,11 @@ Install dependencies with `npm install` then start the server with `npm start`.
 
 You can interact with the service through slack if you specify your slack API token and channel in `config.json`. You can also specify them in the environment variables `SLACK_API_TOKEN` and `SLACK_API_CHANNEL` (the channel name needs to be without the # in front).
 
+In Development environment you can set your variables by command line as you can see in the below lines:
+
+Unix: export SLACK_API_CHANNEL=your-channel-name
+Windows: setx SLACK_API_CHANNEL <your-channel-name>
+
 The bot will list available commands if you write `!help` in the channel.
 
 ## Web API
