@@ -127,7 +127,7 @@ const commands = {
 
 module.exports = async function(apiToken) {
 	const web = new WebClient(apiToken)
-	const res = await web.channels.list()
+	const res = await web.conversations.list()
 	const channels = res.channels
 	const botChannel = channels.find(c => c.name === config.slackChannel)
 	if (!botChannel) {
