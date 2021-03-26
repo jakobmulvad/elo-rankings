@@ -28,7 +28,7 @@ const commands = {
 
 			try {
 				await api.newPlayer({name: args[0]})
-				sendMessage('Player created\n```' + JSON.stringify(name) + '```');
+				sendMessage('Player created\n```' + JSON.stringify(args[0]) + '```');
 			} catch (err) {
 				sendMessage('Failed to create player\n```' + err.message + '```')
 			}
