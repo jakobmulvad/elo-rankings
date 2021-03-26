@@ -18,6 +18,35 @@ const commands = {
 			sendMessage('Foosball Rankings ' + package.version + '\nAvailable commands:\n```' + topics.join('\n') + '```')
 		}
 	},
+	'h2h': {
+		description: 'Gets head to head state',
+		usage: '!h2h <name> <name>',
+		handler: async (sendMessage, args) => {
+			if (!Array.isArray(args) || args.length !== 2) {
+				return sendMessage('Missing player name(s)')
+			}
+			const one = args[0];
+			const two = args[1];
+
+			if (one === two) {
+				return sendMessage('Don\'t be cheeky')
+			}
+
+			const scores = {}
+			scores[one] = 0;
+			scores[two] = 0;
+			const history = await api.getHistory();
+			history.forEach(value => {
+				if ([one, two].includes(value.players[0].name) && [one, two].includes(value.players[1].name)) {
+					scores[value.winners[0]] += 1;
+				}
+			});
+			if (scores[one] === 0 && scores[two] === 0) {
+				return sendMessage('They haven\'t played, is someone scared?')
+			}
+			sendMessage(JSON.stringify(scores))
+		}
+	},
 	'newplayer': {
 		description: 'Creates a new player',
 		usage: '!newplayer <name>',

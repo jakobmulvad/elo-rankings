@@ -21,7 +21,7 @@ const api = {
 
 	getHistory: async function() {
 		const history = await getCollection('history')
-		const documents = history.find().toArray()
+		const documents = await history.find().toArray()
 		return documents.map(doc => {
 			delete doc._id
 			return doc
