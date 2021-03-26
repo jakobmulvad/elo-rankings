@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -12,14 +13,64 @@
       type="image/x-icon"
       href="/assets/images/tiliter_logo.png"
     />
+
+  <style>
+  #leaderboard {
+    display: flex;
+    justify-content: space-between;
+  }
+  #players {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .player {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .gray {
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .player > *, #leaderboard > * {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  </style>
+
   </head>
   <body>
-	hello
+	<div>
+		Table:
+	</div>
+	<a href="/table.html">reload</a>
+	<div id="leaderboard" style>
+		<div>Name</div>
+		<div>Elo</div>
+		<div>Wins</div>
+		<div>Losses</div>
+	</div>
+	<div id="players" style>
+	</div>
   </body>
 
 <script>
-	fetch('/').then(response => response.json()).then(response => alert(response))
-	alert("Today's date is " + d);
+fetch('/').then(response => response.json()).then(players => players.forEach((player, index) => {
+  var bbb = document.getElementById('players')
+  const a = document.createElement('div')
+  a.className = "player"
+  if (index % 2 === 0) {
+    a.className += " gray"
+  }
+  a.innerHTML += "<div>" + player.name  + "</div>"
+  a.innerHTML += "<div>" + player.elo + "</div>"
+  a.innerHTML += "<div>" + player.wins + "</div>"
+  a.innerHTML += "<div>" + player.loses + "</div>"
+  bbb.appendChild(a)
+}))
+setTimeout(() => window.location.reload(), 30 * 1000)
 </script>
 </html>
-
