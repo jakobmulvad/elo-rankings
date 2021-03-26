@@ -2,8 +2,10 @@ const express = require('express')
 const api = require('./api')
 
 const app = express()
+app.use(express.static('public'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }));
+
 
 app.get('/', (req, res, next) => {
 	api.getRankings()
