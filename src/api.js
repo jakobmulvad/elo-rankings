@@ -253,6 +253,46 @@ const api = {
 			lowestElo: eloEntries[eloEntries.length-1],
 		}
 	},
+
+
+   h2h: async function(query) {
+		const valid = ajv.validate({
+			type: 'object',
+			required: ['player1', 'player2'],
+			properties: {
+				player1: { type: 'string' },
+				player2: { type: 'string' },
+			},
+		}, query);
+
+		if (!valid) {
+			throw new Error(ajv.errors)
+		}
+
+		const p1 = query.player1
+	   	const p2 = query.player2
+
+		let totalGames = 0;
+		let p1WinCount = 0;
+		let p1EloGain = 0;
+
+		const history = await api.getHistory();
+		history.forEach(pastGame => {
+			const bothPlayersInvolved =
+				[p1, p2].includes(pastGame.players[0].name) && [p1, p2].includes(pastGame.players[1].name)
+			if (bothPlayersInvolved) {
+				totalGames += 1;
+				const p1Won = pastGame.winners[0] === p1;
+				if (p1Won) {
+					p1WinCount += 1;
+					p1EloGain += pastGame.deltaElo;
+				} else {
+					p1EloGain -= pastGame.deltaElo;
+				}
+			}
+		});
+		return {totalGames, p1WinCount, p1EloGain}
+	}
 }
 
 module.exports = api;

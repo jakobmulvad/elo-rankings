@@ -8,6 +8,7 @@ function formatDate(date) {
 	return `${date.toJSON().slice(0,10)} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`
 }
 
+
 const commands = {
 	'help': {
 		description: 'Gets the list of available commands',
@@ -25,26 +26,16 @@ const commands = {
 			if (!Array.isArray(args) || args.length !== 2) {
 				return sendMessage('Missing player name(s)')
 			}
-			const one = args[0];
-			const two = args[1];
-
-			if (one === two) {
+			const player1 = args[0];
+			const player2 = args[1];
+			if (player1 === player2) {
 				return sendMessage('Don\'t be cheeky')
 			}
-
-			const scores = {}
-			scores[one] = 0;
-			scores[two] = 0;
-			const history = await api.getHistory();
-			history.forEach(value => {
-				if ([one, two].includes(value.players[0].name) && [one, two].includes(value.players[1].name)) {
-					scores[value.winners[0]] += 1;
-				}
-			});
-			if (scores[one] === 0 && scores[two] === 0) {
-				return sendMessage('They haven\'t played, is someone scared?')
+			const h2hstats = await api.h2h({player1, player2});
+			if (h2hstats.totalGames === 0) {
+				return sendMessage(`No games were played between ${player1} and ${player2}?`);
 			}
-			sendMessage(JSON.stringify(scores))
+			sendMessage(JSON.stringify(h2hstats))
 		}
 	},
 	'newplayer': {
@@ -128,7 +119,7 @@ const commands = {
 		},
 	},
 	'stats': {
-		description: 'Displayes various stats',
+		description: 'Displays various stats',
 		usage: '!stats',
 		handler: async (sendMessage, args) => {
 			if (args.length === 0) {
