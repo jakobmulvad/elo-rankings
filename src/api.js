@@ -1,5 +1,6 @@
 const mongodb = require('mongodb');
 const getDb = require('./get-db')
+const http = require('http');
 const ajv = require('ajv')()
 const elo = require('./elo')
 
@@ -11,6 +12,10 @@ async function getCollection(collection) {
 function getAverageElo(docs) {
 	const eloSum = docs.reduce((elo, doc) => elo + doc.elo, 0)
 	return Math.round(eloSum / docs.length)
+}
+
+function makeSafeHttpCall(url) {
+	http.get(url, () => undefined).on('error', console.log);
 }
 
 const api = {
@@ -82,6 +87,15 @@ const api = {
 			winners: [query.winner],
 			losers: [query.loser],
 		})
+
+		let red = 255;
+		let green = 0;
+		if (gameResult.probability >= 0.5) {
+			red = 0;
+			green = 255;
+		}
+		const lightUrl = 'http://carlpi:5000/color?red='+ red + '&blue=0&green=' + green;
+		makeSafeHttpCall(lightUrl);
 
 		return {
 			message: gameResult.message,
