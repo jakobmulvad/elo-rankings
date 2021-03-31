@@ -35,7 +35,12 @@ const commands = {
 			if (h2hstats.totalGames === 0) {
 				return sendMessage(`No games were played between ${player1} and ${player2}?`);
 			}
-			sendMessage(JSON.stringify(h2hstats))
+			const { totalGames, p1EloGain, p1WinCount } = h2hstats;
+			const message = 'total: ' + totalGames
+				+ ', ' + player1 + ': ' + p1WinCount
+				+ ', ' + player2 + ': ' + totalGames - p1WinCount
+				+ ', ' + p1WinCount >= 0 ? player1 : player2  + ' gained ' + Math.abs(p1EloGain) + 'elo';
+			sendMessage(message)
 		}
 	},
 	'newplayer': {
