@@ -36,10 +36,11 @@ const commands = {
 				return sendMessage(`No games were played between ${player1} and ${player2}?`);
 			}
 			const { totalGames, p1EloGain, p1WinCount } = h2hstats;
+			const winner = p1WinCount >= 0 ? player1 : player2
 			const message = 'total: ' + totalGames
 				+ ', ' + player1 + ': ' + p1WinCount
 				+ ', ' + player2 + ': ' + totalGames - p1WinCount
-				+ ', ' + p1WinCount >= 0 ? player1 : player2  + ' gained ' + Math.abs(p1EloGain) + 'elo';
+				+ ', ' + winner + ' gained ' + Math.abs(p1EloGain) + 'elo';
 			sendMessage(message)
 		}
 	},
