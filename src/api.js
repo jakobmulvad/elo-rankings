@@ -263,7 +263,9 @@ const api = {
 		const joinString = '-=-|-=-'
 		const matchups = {};
 		allHistory.forEach(doc => {
-			console.log(doc)
+			if (doc.players.length !== 2) {
+				return;
+			}
 			const winner = doc.winners[0];
 			const loser = doc.losers[0];
 			let delta = doc.deltaElo;
