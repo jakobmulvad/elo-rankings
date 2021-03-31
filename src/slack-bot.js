@@ -130,7 +130,7 @@ const commands = {
 			if (args.length === 0) {
 				try {
 					const stats = await api.stats()
-					const { gamesPlayed, highestElo, lowestElo, biggestUpset } = stats
+					const { gamesPlayed, highestElo, lowestElo, biggestUpset, feed } = stats
 
 					const buWinners = biggestUpset.winners.map(winner => `${winner.name} (${winner.elo})`)
 					const buLosers = biggestUpset.losers.map(loser => `${loser.name} (${loser.elo})`)
@@ -138,7 +138,8 @@ const commands = {
 						`Games played: ${gamesPlayed}`,
 						`Highest ELO achieved: :trophy:${highestElo.name} peaked at ${highestElo.elo} on ${formatDate(highestElo.time)}`,
 						`Lowest ELO achieved: :poop:${lowestElo.name} hit rock bottom at ${lowestElo.elo} on ${formatDate(lowestElo.time)}`,
-						`Biggest upset: ${buWinners.join(',')} won against ${buLosers.join(',')} on ${formatDate(biggestUpset.time)} (probability: ${(stats.biggestUpset.probability * 100).toFixed(1)}%)`,
+						`Largest upset: ${buWinners.join(',')} won against ${buLosers.join(',')} on ${formatDate(biggestUpset.time)} (probability: ${(stats.biggestUpset.probability * 100).toFixed(1)}%)`,
+						`Biggest feed: ${feed[1]} has given ${feed[0]} ${feed[2]} elo points.`,
 					]
 					sendMessage(lines.join('\n'))
 				} catch(err) {
@@ -182,7 +183,7 @@ module.exports = async function(apiToken) {
 	rtm.on('connected', function () {
 		console.log('Slack connected')
 		if (welcome) {
-			rtm.sendMessage('Elo Rankings v' + package.version + ' online', botChannel.id)
+			// rtm.sendMessage('Elo Rankings v' + package.version + ' online', botChannel.id)
 			welcome = false
 		}
 	})

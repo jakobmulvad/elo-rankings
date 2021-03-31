@@ -260,11 +260,43 @@ const api = {
 		}, [])
 		eloEntries.sort((a,b) => b.elo - a.elo)
 
+		const joinString = '-=-|-=-'
+		const matchups = {};
+		allHistory.forEach(doc => {
+			console.log(doc)
+			const winner = doc.winners[0];
+			const loser = doc.losers[0];
+			let delta = doc.deltaElo;
+			let combinedName = loser + joinString + winner;
+			if (winner < loser) {
+				delta *= -1;
+				combinedName = winner + joinString + loser;
+			}
+			if (combinedName in matchups) {
+				matchups[combinedName] += delta;
+			} else {
+				matchups[combinedName] = delta;
+			}
+		});
+		const largest = Object.entries(matchups).reduce((current, biggest) => {
+			return Math.abs(current[1]) > Math.abs(biggest[1]) ? current : biggest;
+		}, ['fake', 0]);
+		const feed = largest[0].split(joinString);
+		feed.push(largest[1]);
+		if (largest[1] < 0) {
+			feed[2] *= -1;
+		} else {
+			const temp = feed[0];
+			feed[0] = feed[1];
+			feed[1] = temp;
+		}
+
 		return {
 			gamesPlayed: allHistory.length,
 			biggestUpset: upsets[0],
 			highestElo: eloEntries[0],
 			lowestElo: eloEntries[eloEntries.length-1],
+			feed,
 		}
 	},
 
